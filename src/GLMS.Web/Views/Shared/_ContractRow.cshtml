@@ -1,0 +1,55 @@
+@model ContractRowModel
+@{
+    var c = Model.Contract;
+    var today = Model.Today;
+    var pct = Math.Round(c.TermProgress(today) * 100, 1);
+    var pctText = pct.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var position = pct < 10 ? "pos-left" : pct > 90 ? "pos-right" : "pos-mid";
+
+    string? marker = c.Status switch
+    {
+        ContractStatus.Active when c.IsOverdueForExpiry(today) => "Term ended",
+        ContractStatus.Active when today < c.StartDate.Date => $"Starts in {DisplayFormat.Days(c.DaysUntilStart(today))}",
+        ContractStatus.Active => "Today",
+        ContractStatus.OnHold => "Paused",
+        ContractStatus.Draft when today < c.StartDate.Date => $"Starts in {DisplayFormat.Days(c.DaysUntilStart(today))}",
+        ContractStatus.Draft => "Not active yet",
+        _ => null
+    };
+
+    var note = c.Status switch
+    {
+        ContractStatus.Active when c.IsOverdueForExpiry(today) => "Awaiting expiry",
+        ContractStatus.Active when c.DaysRemaining(today) == 0 => "Ends today",
+        ContractStatus.Active => $"{DisplayFormat.Days(c.DaysRemaining(today))} left",
+        ContractStatus.OnHold => "Requests blocked",
+        ContractStatus.Draft => c.HasSignedAgreement ? "Ready to activate" : "Not signed",
+        _ => "Closed record"
+    };
+
+    // Draft contracts haven't travelled any distance yet; expired ones have travelled the whole route.
+    var showProgress = c.Status is ContractStatus.Active or ContractStatus.OnHold or ContractStatus.Expired;
+}
+<a class="crow @DisplayFormat.Tone(c.Status)" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">
+    <div class="ref">
+        <b>@c.ContractNumber</b>
+        <span>@c.Client?.Name</span>
+        <em>@DisplayFormat.Label(c.ServiceLevel)</em>
+    </div>
+    <div class="term" aria-label="Term @DisplayFormat.ShortDate(c.StartDate) to @DisplayFormat.ShortDate(c.EndDate)">
+        <div class="track">
+            @if (showProgress)
+            {
+                <div class="done" style="width:@(pctText)%"></div>
+            }
+            <span class="pin start @(showProgress ? "filled" : "")"></span>
+            <span class="pin end @(c.Status == ContractStatus.Expired ? "filled" : "")"></span>
+            @if (marker is not null)
+            {
+                <span class="now @position" style="left:@(pctText)%">@marker</span>
+            }
+        </div>
+        <div class="ends"><span>@DisplayFormat.ShortDate(c.StartDate)</span><span>@DisplayFormat.ShortDate(c.EndDate)</span></div>
+    </div>
+    <div class="state">@DisplayFormat.Label(c.Status)<small>@note</small></div>
+</a>

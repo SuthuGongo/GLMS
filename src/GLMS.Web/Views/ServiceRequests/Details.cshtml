@@ -1,0 +1,62 @@
+@model ServiceRequest
+@{ ViewData["Title"] = $"Service request #{Model.Id}"; }
+
+<div class="page-header">
+    <div>
+        <h1>Service request #@Model.Id <span class="@DisplayFormat.BadgeClass(Model.Status) align-middle ms-2">@DisplayFormat.Label(Model.Status)</span></h1>
+        <p>Contract <a asp-controller="Contracts" asp-action="Details" asp-route-id="@Model.ContractId">@Model.Contract?.ContractNumber</a> &middot; @Model.Contract?.Client?.Name</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        @if (Model.Status == ServiceRequestStatus.Pending)
+        {
+            <form asp-action="Start" asp-route-id="@Model.Id" method="post"><button class="btn btn-primary">Start work</button></form>
+        }
+        @if (Model.Status == ServiceRequestStatus.InProgress)
+        {
+            <form asp-action="Complete" asp-route-id="@Model.Id" method="post"><button class="btn btn-success">Mark completed</button></form>
+        }
+        @if (Model.IsOpen)
+        {
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Cancel this service request?');">
+                <button class="btn btn-outline-danger">Cancel request</button>
+            </form>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusReason))
+{
+    <div class="alert alert-info">@Model.StatusReason</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-header">Request</div><div class="card-body">
+            <dl class="dl-grid">
+                <dt>Description</dt><dd style="white-space:pre-line">@Model.Description</dd>
+                <dt>Priority</dt><dd><span class="@DisplayFormat.BadgeClass(Model.Priority)">@Model.Priority</span></dd>
+                <dt>SLA tier</dt><dd>@(Model.Contract is null ? "-" : DisplayFormat.Label(Model.Contract.ServiceLevel))</dd>
+                <dt>Raised</dt><dd>@DisplayFormat.DateTime(Model.CreatedUtc)</dd>
+                <dt>Response due</dt><dd>@DisplayFormat.DateTime(Model.ResponseDueUtc)</dd>
+                @if (Model.ClosedUtc.HasValue)
+                {
+                    <dt>Closed</dt><dd>@DisplayFormat.DateTime(Model.ClosedUtc.Value)</dd>
+                }
+            </dl>
+        </div></div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card"><div class="card-header">Financials</div><div class="card-body">
+            <div class="rate-panel mb-3">
+                <div class="small-muted">Local cost</div>
+                <div class="zar">@DisplayFormat.Zar(Model.CostZar)</div>
+            </div>
+            <dl class="dl-grid">
+                <dt>Cost (USD)</dt><dd>@DisplayFormat.Usd(Model.CostUsd)</dd>
+                <dt>Rate used</dt><dd>@DisplayFormat.Rate(Model.ExchangeRateUsed)</dd>
+                <dt>Rate source</dt><dd>@Model.RateSource</dd>
+                <dt>Rate published</dt><dd>@DisplayFormat.DateTime(Model.RateRetrievedUtc)</dd>
+            </dl>
+        </div></div>
+    </div>
+</div>

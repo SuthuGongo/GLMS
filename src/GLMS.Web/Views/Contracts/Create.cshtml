@@ -1,0 +1,37 @@
+@model ContractFormViewModel
+@{ ViewData["Title"] = "New contract"; }
+
+<div class="page-header">
+    <div><h1>New contract</h1><p>Contracts start as <strong>Draft</strong>. Upload the signed PDF to activate immediately.</p></div>
+</div>
+
+<div class="card"><div class="card-body">
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <partial name="_ContractFields" model="Model" />
+
+        <hr class="my-4" />
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="SignedAgreement" class="form-label"></label>
+                <input asp-for="SignedAgreement" type="file" class="form-control" accept=".pdf,application/pdf"
+                       data-pdf-only data-feedback="agreementFeedback" />
+                <div class="form-text">PDF only, maximum 10 MB. Stored on the file server under a unique name.</div>
+                <span id="agreementFeedback" class="field-validation-error"></span>
+                <span asp-validation-for="SignedAgreement" class="field-validation-error"></span>
+            </div>
+            <div class="col-md-6 d-flex align-items-center">
+                <div class="form-check mt-3">
+                    <input asp-for="ActivateNow" class="form-check-input" />
+                    <label asp-for="ActivateNow" class="form-check-label"></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Create contract</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div></div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

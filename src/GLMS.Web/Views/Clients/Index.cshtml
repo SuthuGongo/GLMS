@@ -1,0 +1,34 @@
+@model IReadOnlyList<Client>
+@{ ViewData["Title"] = "Clients"; }
+
+<div class="page-header">
+    <div>
+        <h1>Clients</h1>
+        <p>@Model.Count client(s) on record.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">Add client</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Name</th><th>Contact</th><th>Email</th><th>Region</th><th class="text-center">Contracts</th></tr></thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td><a asp-action="Details" asp-route-id="@c.Id" class="fw-semibold">@c.Name</a></td>
+                        <td>@c.ContactPerson<div class="small-muted">@c.PhoneNumber</div></td>
+                        <td>@c.Email</td>
+                        <td>@c.Region</td>
+                        <td class="text-center">@c.Contracts.Count</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">No clients yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

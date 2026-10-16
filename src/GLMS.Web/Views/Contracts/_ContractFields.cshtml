@@ -1,0 +1,38 @@
+@model ContractFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
+<input type="hidden" asp-for="Id" />
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="ClientId" class="form-label"></label>
+        <select asp-for="ClientId" asp-items="Model.Clients" class="form-select">
+            <option value="0">-- Select client --</option>
+        </select>
+        <span asp-validation-for="ClientId" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="ServiceLevel" class="form-label"></label>
+        <select asp-for="ServiceLevel" class="form-select">
+            @foreach (var l in Enum.GetValues<ServiceLevel>())
+            {
+                <option value="@l" selected="@(Model.ServiceLevel == l)">@DisplayFormat.Label(l)</option>
+            }
+        </select>
+        <div class="form-text">Standard: 48h response. Priority Logistics: 8h response, urgent requests 2h.</div>
+    </div>
+    <div class="col-12">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" placeholder="e.g. Cape Town - Rotterdam ocean freight" />
+        <span asp-validation-for="Title" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" class="form-control" type="date" />
+        <span asp-validation-for="StartDate" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="EndDate" class="form-label"></label>
+        <input asp-for="EndDate" class="form-control" type="date" />
+        <span asp-validation-for="EndDate" class="field-validation-error"></span>
+    </div>
+</div>

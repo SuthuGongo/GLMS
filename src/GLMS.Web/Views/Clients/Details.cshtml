@@ -1,0 +1,54 @@
+@model Client
+@{ ViewData["Title"] = Model.Name; }
+
+<div class="page-header">
+    <div><h1>@Model.Name</h1><p>@Model.Region</p></div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-accent" asp-controller="Contracts" asp-action="Create" asp-route-clientId="@Model.Id">New contract</a>
+        <a class="btn btn-outline-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+        @if (!Model.Contracts.Any())
+        {
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Delete this client?');">
+                <button type="submit" class="btn btn-outline-danger">Delete</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card"><div class="card-header">Contact details</div><div class="card-body">
+            <dl class="dl-grid">
+                <dt>Contact person</dt><dd>@(string.IsNullOrEmpty(Model.ContactPerson) ? "-" : Model.ContactPerson)</dd>
+                <dt>Email</dt><dd><a href="mailto:@Model.Email">@Model.Email</a></dd>
+                <dt>Phone</dt><dd>@(string.IsNullOrEmpty(Model.PhoneNumber) ? "-" : Model.PhoneNumber)</dd>
+                <dt>Region</dt><dd>@Model.Region</dd>
+            </dl>
+        </div></div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">Contracts (@Model.Contracts.Count)</div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Number</th><th>Title</th><th>Term</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.Contracts.OrderByDescending(c => c.StartDate))
+                        {
+                            <tr>
+                                <td><a asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">@c.ContractNumber</a></td>
+                                <td>@c.Title</td>
+                                <td class="small">@DisplayFormat.Date(c.StartDate) &ndash; @DisplayFormat.Date(c.EndDate)</td>
+                                <td><span class="@DisplayFormat.BadgeClass(c.Status)">@DisplayFormat.Label(c.Status)</span></td>
+                            </tr>
+                        }
+                        @if (!Model.Contracts.Any())
+                        {
+                            <tr><td colspan="4" class="text-center text-muted py-4">No contracts for this client yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,42 @@
+@model ServiceRequestIndexViewModel
+@{ ViewData["Title"] = "Service requests"; }
+
+<div class="page-header">
+    <div><h1>Service requests</h1><p>@Model.Requests.Count request(s)@(Model.Status.HasValue ? $" with status {DisplayFormat.Label(Model.Status.Value)}" : "").</p></div>
+    <a class="btn btn-accent" asp-action="Create">Raise service request</a>
+</div>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a asp-action="Index" class="btn btn-sm @(Model.Status is null ? "btn-primary" : "btn-outline-primary")">All</a>
+    @foreach (var s in Enum.GetValues<ServiceRequestStatus>())
+    {
+        <a asp-action="Index" asp-route-status="@s" class="btn btn-sm @(Model.Status == s ? "btn-primary" : "btn-outline-primary")">@DisplayFormat.Label(s)</a>
+    }
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>Contract / client</th><th>Description</th><th class="text-end">USD</th><th class="text-end">ZAR</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var r in Model.Requests)
+                {
+                    <tr>
+                        <td><a asp-action="Details" asp-route-id="@r.Id" class="fw-semibold">#@r.Id</a></td>
+                        <td>@r.Contract?.ContractNumber<div class="small-muted">@r.Contract?.Client?.Name</div></td>
+                        <td class="text-truncate" style="max-width:260px">@r.Description</td>
+                        <td class="text-end">@DisplayFormat.Usd(r.CostUsd)</td>
+                        <td class="text-end fw-semibold">@DisplayFormat.Zar(r.CostZar)</td>
+                        <td><span class="@DisplayFormat.BadgeClass(r.Priority)">@r.Priority</span></td>
+                        <td class="small">@DisplayFormat.DateTime(r.ResponseDueUtc)</td>
+                        <td><span class="@DisplayFormat.BadgeClass(r.Status)">@DisplayFormat.Label(r.Status)</span></td>
+                    </tr>
+                }
+                @if (!Model.Requests.Any())
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No service requests found.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

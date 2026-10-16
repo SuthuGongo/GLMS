@@ -1,0 +1,19 @@
+@model ContractFormViewModel
+@{ ViewData["Title"] = "Edit contract"; }
+
+<div class="page-header">
+    <div><h1>Edit contract</h1><p>Status changes and the signed agreement are managed on the contract's details page.</p></div>
+</div>
+
+<div class="card"><div class="card-body">
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+        <input type="hidden" asp-for="RowVersion" />
+        <partial name="_ContractFields" model="Model" />
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div></div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

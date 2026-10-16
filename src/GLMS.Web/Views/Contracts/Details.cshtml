@@ -1,0 +1,239 @@
+@model ContractDetailsViewModel
+@using GLMS.Core.Services
+@{
+    var c = Model.Contract;
+    var today = Model.Today;
+    ViewData["Title"] = c.ContractNumber;
+    var pct = Math.Round(c.TermProgress(today) * 100, 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var showProgress = c.Status is ContractStatus.Active or ContractStatus.OnHold or ContractStatus.Expired;
+    var totalDays = c.TermLengthDays();
+
+    var midText = c.Status switch
+    {
+        ContractStatus.Expired => "Term complete",
+        ContractStatus.Draft when today < c.StartDate.Date => $"Starts in {DisplayFormat.Days(c.DaysUntilStart(today))}",
+        _ when today > c.EndDate.Date => "Term ended",
+        _ => $"{DisplayFormat.Days(c.DaysRemaining(today))} left of {totalDays}"
+    };
+    string? marker = c.Status switch
+    {
+        ContractStatus.Expired => null,
+        ContractStatus.Draft => null,
+        ContractStatus.OnHold => $"Paused, {DisplayFormat.ShortDate(today)}",
+        _ => $"Today, {today:d MMM}"
+    };
+    var markerPos = c.TermProgress(today) < .1 ? "pos-left" : c.TermProgress(today) > .9 ? "pos-right" : "pos-mid";
+}
+
+<div class="crumb"><a asp-action="Index">Contracts</a> / @c.ContractNumber</div>
+
+<div class="page-header d-head">
+    <div>
+        <h1>@c.Title <span class="chip @DisplayFormat.Tone(c.Status)">@DisplayFormat.Label(c.Status)</span></h1>
+        <p>@c.ContractNumber for <a asp-controller="Clients" asp-action="Details" asp-route-id="@c.ClientId">@c.Client?.Name</a>, @DisplayFormat.Label(c.ServiceLevel) service</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var next in Model.NextStatuses)
+        {
+            var label = next switch
+            {
+                ContractStatus.Active => c.Status == ContractStatus.OnHold ? "Re-activate" : "Activate",
+                ContractStatus.OnHold => "Put on hold",
+                _ => "Mark expired"
+            };
+            var css = next == ContractStatus.Expired ? "btn-outline-danger" : "btn-line";
+            <form asp-action="ChangeStatus" asp-route-id="@c.Id" method="post" onsubmit="return confirm('@label @c.ContractNumber?');">
+                <input type="hidden" name="newStatus" value="@next" />
+                <input type="hidden" name="rowVersion" value="@(c.RowVersion is null ? "" : Convert.ToBase64String(c.RowVersion))" />
+                <button type="submit" class="btn @css">@label</button>
+            </form>
+        }
+        @if (c.Status != ContractStatus.Expired)
+        {
+            <a class="btn btn-line" asp-action="Edit" asp-route-id="@c.Id">Edit</a>
+        }
+        @if (Model.CanRaiseRequests)
+        {
+            <a class="btn btn-primary" asp-controller="ServiceRequests" asp-action="Create" asp-route-contractId="@c.Id">New service request</a>
+        }
+    </div>
+</div>
+
+@if (!Model.CanRaiseRequests)
+{
+    <div class="alert alert-warning">
+        <strong>New service requests are blocked for this contract.</strong>
+        @foreach (var reason in Model.RequestBlockers) { <div>@reason</div> }
+    </div>
+}
+
+<section class="card route @DisplayFormat.Tone(c.Status) mb-4">
+    <div class="ends2">
+        <div><small>Term starts</small><strong>@DisplayFormat.ShortDate(c.StartDate)</strong></div>
+        <div class="mid">@midText</div>
+        <div><small>Term ends</small><strong>@DisplayFormat.ShortDate(c.EndDate)</strong></div>
+    </div>
+    <div class="term">
+        <div class="track">
+            @if (showProgress) { <div class="done" style="width:@(pct)%"></div> }
+            <span class="pin start @(showProgress ? "filled" : "")"></span>
+            <span class="pin end @(c.Status == ContractStatus.Expired ? "filled" : "")"></span>
+            @if (marker is not null) { <span class="now @markerPos" style="left:@(pct)%">@marker</span> }
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="stack">
+            <section class="card">
+                <div class="card-h"><h2>Contract milestones</h2></div>
+                <ol class="miles">
+                    @foreach (var m in Model.Milestones)
+                    {
+                        var css = m.State switch { MilestoneState.Reached => "reached", MilestoneState.ToDo => "todo-m", _ => "" };
+                        <li class="@css">
+                            <span class="ic" aria-hidden="true">
+                                @if (m.State == MilestoneState.Reached)
+                                {
+                                    <svg width="14" height="14" viewBox="0 0 14 14"><path d="m3 7 3 3 5-6" fill="none" stroke="#fff" stroke-width="2" /></svg>
+                                }
+                            </span>
+                            <div>
+                                <div class="t">
+                                    @if (m.RequestId.HasValue)
+                                    {
+                                        <a asp-controller="ServiceRequests" asp-action="Details" asp-route-id="@m.RequestId">@m.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @m.Title
+                                    }
+                                </div>
+                                <div class="s">
+                                    @if (m.Title == "Signed agreement on file")
+                                    {
+                                        <a asp-action="DownloadAgreement" asp-route-id="@c.Id">@m.Detail</a>
+                                    }
+                                    else
+                                    {
+                                        @m.Detail
+                                    }
+                                </div>
+                            </div>
+                            <div class="when">
+                                @if (m.Date.HasValue)
+                                {
+                                    @(m.State == MilestoneState.ToDo ? "Due " + DisplayFormat.DueText(m.Date.Value) : DisplayFormat.ShortDate(m.Title == "Expires" ? m.Date.Value : DisplayFormat.ToLocal(m.Date.Value)))
+                                }
+                            </div>
+                        </li>
+                    }
+                </ol>
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h2>Service requests</h2><span class="small-muted">@c.ServiceRequests.Count in total</span></div>
+                @if (c.ServiceRequests.Any())
+                {
+                    <div class="table-responsive mt-2">
+                        <table class="table table-hover">
+                            <thead><tr><th>Request</th><th class="text-end">USD</th><th class="text-end">ZAR</th><th>Status</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in c.ServiceRequests.OrderByDescending(r => r.CreatedUtc))
+                                {
+                                    <tr>
+                                        <td><a asp-controller="ServiceRequests" asp-action="Details" asp-route-id="@r.Id" class="fw-semibold">#@r.Id</a> @DisplayFormat.Shorten(r.Description, 55)</td>
+                                        <td class="text-end num">@DisplayFormat.Usd(r.CostUsd)</td>
+                                        <td class="text-end num">@DisplayFormat.Zar(r.CostZar)</td>
+                                        <td><span class="@DisplayFormat.BadgeClass(r.Status)">@DisplayFormat.Label(r.Status)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="empty mb-0">No service requests have been raised on this contract.</p>
+                }
+            </section>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="stack">
+            <section class="card">
+                <div class="card-h"><h2>Details</h2></div>
+                <div class="card-body pt-2">
+                    <dl class="dl-grid">
+                        <dt>Client</dt><dd>@c.Client?.Name</dd>
+                        <dt>Region</dt><dd>@c.Client?.Region</dd>
+                        <dt>Service level</dt><dd>@DisplayFormat.Label(c.ServiceLevel), @(c.ServiceLevel == ServiceLevel.PriorityLogistics ? "8-hour response (2 hours if urgent)" : "48-hour response")</dd>
+                        <dt>Open requests</dt><dd>@c.ServiceRequests.Count(r => r.IsOpen)</dd>
+                        <dt>Created</dt><dd>@DisplayFormat.DateTime(c.CreatedUtc)</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h2>Signed agreement</h2></div>
+                <div class="card-body">
+                    @if (c.HasSignedAgreement)
+                    {
+                        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                            <div>
+                                <div class="fw-semibold">@c.SignedAgreementOriginalName</div>
+                                <div class="small-muted">Uploaded @(c.SignedAgreementUploadedUtc.HasValue ? DisplayFormat.DateTime(c.SignedAgreementUploadedUtc.Value) : "")</div>
+                            </div>
+                            <a class="btn btn-sm btn-line" asp-action="DownloadAgreement" asp-route-id="@c.Id">Download PDF</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="small-muted">No signed agreement yet. Upload it to activate the contract.</p>
+                    }
+
+                    @if (c.Status != ContractStatus.Expired)
+                    {
+                        <form asp-action="UploadAgreement" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="ContractId" value="@c.Id" />
+                            <div class="input-group input-group-sm">
+                                <input type="file" name="SignedAgreement" class="form-control" accept=".pdf,application/pdf"
+                                       data-pdf-only data-feedback="uploadFeedback" required aria-label="Signed agreement PDF" />
+                                <button type="submit" class="btn btn-line">@(c.HasSignedAgreement ? "Replace" : "Upload")</button>
+                            </div>
+                            <div id="uploadFeedback" class="field-validation-error"></div>
+                            <div class="form-text">PDF only, up to 10 MB.</div>
+                        </form>
+                    }
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h2>Compliance audit trail</h2></div>
+                <div class="card-body pt-2">
+                    @if (Model.AuditTrail.Any())
+                    {
+                        <ul class="timeline">
+                            @foreach (var a in Model.AuditTrail)
+                            {
+                                <li>
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <span class="@DisplayFormat.BadgeClass(a.Severity)">@a.Severity</span>
+                                        <span class="small-muted">@DisplayFormat.DateTime(a.OccurredUtc)</span>
+                                    </div>
+                                    <div class="small mt-1">@a.Message</div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="small-muted mb-0">No status changes recorded yet. Every change made from now on is logged here.</p>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

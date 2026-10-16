@@ -1,0 +1,111 @@
+@model DashboardViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Home";
+    ViewData["Today"] = Model.Today;
+    var todoCount = Model.WorkItems.Count;
+    var summaryLine = todoCount switch
+    {
+        0 => "Nothing needs you right now.",
+        1 => "1 thing needs you today.",
+        _ => $"{todoCount} things need you today."
+    };
+    var openLine = Model.ContractsOpenForWork == 1 ? "1 contract is open for work." : $"{Model.ContractsOpenForWork} contracts are open for work.";
+    var rate = Model.UsdToZar?.Rate.ToString("0.######", CultureInfo.InvariantCulture) ?? "";
+}
+
+<div class="page-header greet">
+    <div>
+        <h1>@DisplayFormat.Greeting(Model.LocalNow)</h1>
+        <p>@summaryLine @openLine</p>
+    </div>
+    <a class="btn btn-line" asp-controller="Contracts" asp-action="Create">New contract</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="stack">
+            <section class="card">
+                <div class="card-h"><h2>To do</h2>@if (todoCount > 1) { <span class="small-muted">Most urgent first</span> }</div>
+                @if (todoCount == 0)
+                {
+                    <p class="empty mb-0">Every contract is signed and active and every service request is on time. New work will appear here.</p>
+                }
+                else
+                {
+                    <ul class="todo">
+                        @foreach (var item in Model.WorkItems)
+                        {
+                            <partial name="_WorkItem" model="item" view-data="ViewData" />
+                        }
+                    </ul>
+                }
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h2>Contracts</h2><a asp-controller="Contracts" asp-action="Index">See all @Model.TotalContracts</a></div>
+                @if (Model.Contracts.Any())
+                {
+                    <div class="clist">
+                        @foreach (var c in Model.Contracts)
+                        {
+                            <partial name="_ContractRow" model="new ContractRowModel(c, Model.Today)" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="empty mb-0">No contracts yet. <a asp-controller="Contracts" asp-action="Create">Create the first contract</a>.</p>
+                }
+            </section>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="stack">
+            <section class="card rate" aria-label="Exchange rate">
+                <div class="lbl">US$1 in South African rand</div>
+                @if (Model.UsdToZar is not null)
+                {
+                    <div class="val"><span>R</span>@DisplayFormat.Rate(Model.UsdToZar.Rate)</div>
+                    <p>@(Model.UsdToZar.IsStale ? "Last known rate, the live service is unavailable" : "Live rate"), published @DisplayFormat.DateTime(Model.UsdToZar.RetrievedUtc)</p>
+                    <div class="conv" data-rate="@rate">
+                        <label for="quickUsd">Convert a quote</label>
+                        <input id="quickUsd" class="form-control" type="number" min="0" step="0.01" value="1000" aria-label="Amount in US dollars" />
+                        <output id="quickZar" for="quickUsd">@DisplayFormat.Zar(Math.Round(1000m * Model.UsdToZar.Rate, 2, MidpointRounding.AwayFromZero))</output>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning small mt-2 mb-0">@Model.RateError Service requests can't be saved until a rate is available.</div>
+                }
+            </section>
+
+            <section class="card">
+                <div class="card-h"><h2>Open requests</h2><a asp-controller="ServiceRequests" asp-action="Index">View all</a></div>
+                <div class="summary">
+                    <div class="r"><span>Past response time</span><b style="@(Model.Requests.Overdue > 0 ? "color:var(--bad)" : "")">@Model.Requests.Overdue</b></div>
+                    <div class="r"><span>Due in the next 24 hours</span><b>@Model.Requests.DueSoon</b></div>
+                    <div class="r"><span>On track</span><b>@Model.Requests.OnTrack</b></div>
+                    <div class="r"><span>Paused (contract on hold)</span><b>@Model.Requests.Paused</b></div>
+                    <div class="r"><span>Raised this month</span><b>@DisplayFormat.Zar(Model.Requests.ValueThisMonthZar)</b></div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const box = document.querySelector('.conv[data-rate]');
+            if (!box) return;
+            const rate = box.dataset.rate;   // exact decimal text
+            const input = document.getElementById('quickUsd');
+            const out = document.getElementById('quickZar');
+            input.addEventListener('input', function () {
+                out.textContent = glmsMoney.format(glmsMoney.convert(input.value, rate));
+            });
+        })();
+    </script>
+}

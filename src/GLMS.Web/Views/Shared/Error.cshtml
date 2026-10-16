@@ -1,0 +1,19 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "Something went wrong";
+}
+
+<section class="lost">
+    <div class="lost-copy">
+        <h1>Something went wrong on our side.</h1>
+        <p class="lead-404">The page couldn't be loaded. Please try again in a moment.</p>
+        @if (Model.ShowRequestId)
+        {
+            <p class="small-muted">If it keeps happening, quote this reference: <code>@Model.RequestId</code></p>
+        }
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Go to Home</a>
+            <a class="btn btn-line" href="javascript:history.back()">Go back</a>
+        </div>
+    </div>
+</section>

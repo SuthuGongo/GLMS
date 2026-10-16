@@ -1,0 +1,31 @@
+@model ClientFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
+<input type="hidden" asp-for="Id" />
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Region" class="form-label"></label>
+        <input asp-for="Region" class="form-control" placeholder="e.g. Southern Africa" />
+        <span asp-validation-for="Region" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ContactPerson" class="form-label"></label>
+        <input asp-for="ContactPerson" class="form-control" />
+        <span asp-validation-for="ContactPerson" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" />
+        <span asp-validation-for="Email" class="field-validation-error"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="PhoneNumber" class="form-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="field-validation-error"></span>
+    </div>
+</div>

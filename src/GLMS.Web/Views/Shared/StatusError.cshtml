@@ -1,0 +1,16 @@
+@model int
+@{
+    ViewData["Title"] = "Something went wrong";
+}
+
+<section class="lost">
+    <div class="lost-copy">
+        <h1>That didn't work.</h1>
+        <p class="lead-404">The server answered with error @Model.</p>
+        <p class="small-muted">Nothing was changed. Try again, or go back to where you were.</p>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Go to Home</a>
+            <a class="btn btn-line" href="javascript:history.back()">Go back</a>
+        </div>
+    </div>
+</section>

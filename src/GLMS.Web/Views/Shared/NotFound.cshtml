@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Page not found";
+
+    
+    var notFoundImage = "~/images/AWW.png";
+}
+
+<section class="lost @(string.IsNullOrEmpty(notFoundImage) ? "no-art" : "")">
+    @if (!string.IsNullOrEmpty(notFoundImage))
+    {
+        <img class="lost-art" src="@Url.Content(notFoundImage)" alt="" />
+    }
+
+    <div class="lost-copy">
+        <h1>Aww, don't cry.</h1>
+        <p class="lead-404">It's just a 404. This page got lost in transit.</p>
+        <p class="small-muted">The link may be out of date, or the contract, client or request you were looking for no longer exists.</p>
+
+        <form class="lost-search" asp-controller="Contracts" asp-action="Index" method="get" role="search">
+            <label for="lostSearch" class="form-label">Search contracts or clients instead</label>
+            <div class="d-flex gap-2">
+                <input id="lostSearch" type="search" name="Keyword" class="form-control" placeholder="Contract number, title or client" />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a class="btn btn-line" asp-controller="Home" asp-action="Index">Go to Home</a>
+            <a class="btn btn-line" asp-controller="Contracts" asp-action="Index">All contracts</a>
+            <a class="btn btn-line" asp-controller="ServiceRequests" asp-action="Index">Service requests</a>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,134 @@
+@model ServiceRequestCreateViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Raise service request";
+    var rate = Model.Quote?.Rate.ToString("0.######", CultureInfo.InvariantCulture) ?? "";
+}
+
+<div class="page-header">
+    <div><h1>Raise service request</h1><p>Only active contracts within their term are listed. Requests on expired or on-hold contracts are rejected.</p></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-body">
+            <form asp-action="Create" method="post" id="requestForm">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ContractId" class="form-label"></label>
+                    <select asp-for="ContractId" asp-items="Model.Contracts" class="form-select">
+                        <option value="0">-- Select an active contract --</option>
+                    </select>
+                    <span asp-validation-for="ContractId" class="field-validation-error"></span>
+                    @if (!Model.Contracts.Any())
+                    {
+                        <div class="form-text text-danger">There are no active contracts available right now.</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="What service is required?"></textarea>
+                    <span asp-validation-for="Description" class="field-validation-error"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CostUsd" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">US$</span>
+                        <input asp-for="CostUsd" class="form-control" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00" />
+                    </div>
+                    <span asp-validation-for="CostUsd" class="field-validation-error"></span>
+                </div>
+
+                <div class="form-check mb-4" id="urgentGroup">
+                    <input asp-for="IsUrgent" class="form-check-input" />
+                    <label asp-for="IsUrgent" class="form-check-label"></label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Submit request</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div></div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card"><div class="card-header">Local cost (ZAR)</div><div class="card-body">
+            <div class="rate-panel" id="ratePanel" data-rate="@rate">
+                <div class="small-muted">Estimated cost in Rand</div>
+                <div class="zar" id="zarPreview">R 0.00</div>
+                <div class="small-muted mt-2" id="rateInfo">
+                    @if (Model.Quote is not null)
+                    {
+                        <span>US$1 = R @DisplayFormat.Rate(Model.Quote.Rate), @Model.Quote.Source</span>
+                    }
+                </div>
+                @if (Model.Quote?.IsStale == true)
+                {
+                    <div class="alert alert-warning small mt-2 mb-0">Live rates are unavailable - using the last known rate.</div>
+                }
+                @if (Model.RateError is not null)
+                {
+                    <div class="alert alert-warning small mt-2 mb-0" id="rateError">@Model.RateError The request can't be saved until a rate is available.</div>
+                }
+            </div>
+            <p class="small-muted mt-3 mb-0">
+                This preview updates as you type. When you submit, the server fetches the current rate again
+                and saves both the USD amount and the calculated ZAR cost with the rate used.
+            </p>
+            <button type="button" class="btn btn-sm btn-outline-primary mt-3" id="refreshRate">Refresh rate</button>
+        </div></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const panel = document.getElementById('ratePanel');
+            const amountInput = document.getElementById('CostUsd');
+            const preview = document.getElementById('zarPreview');
+            const info = document.getElementById('rateInfo');
+            const contractSelect = document.getElementById('ContractId');
+            const urgentGroup = document.getElementById('urgentGroup');
+            const urgentBox = document.getElementById('IsUrgent');
+            const levels = @Json.Serialize(Model.ContractServiceLevels);
+            let rate = panel.dataset.rate || null;   // kept as text: exact decimal, never a float
+
+            // Exact integer maths (site.js glmsMoney), identical to the server's CurrencyCalculator.
+            function update() {
+                preview.textContent = rate ? glmsMoney.format(glmsMoney.convert(amountInput.value, rate)) : 'R 0.00';
+            }
+
+            function updateUrgent() {
+                const isPriority = levels[contractSelect.value] === 'PriorityLogistics';
+                urgentGroup.style.display = isPriority ? '' : 'none';
+                if (!isPriority) urgentBox.checked = false;
+            }
+
+            async function refreshRate() {
+                info.textContent = 'Fetching the latest rate...';
+                try {
+                    const response = await fetch('@Url.Action("Quote")', { headers: { 'Accept': 'application/json' } });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Rate unavailable');
+                    rate = data.rateText;
+                    info.textContent = 'US$1 = R ' + rate + ', ' + data.source;
+                } catch (err) {
+                    info.textContent = 'Could not fetch the rate: ' + err.message;
+                }
+                update();
+            }
+
+            amountInput.addEventListener('input', update);
+            contractSelect.addEventListener('change', updateUrgent);
+            document.getElementById('refreshRate').addEventListener('click', refreshRate);
+            if (!rate) refreshRate();
+            update();
+            updateUrgent();
+        })();
+    </script>
+}

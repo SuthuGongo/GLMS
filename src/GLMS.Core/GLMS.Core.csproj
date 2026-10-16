@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    GLMS.Core holds the domain model, the three GoF patterns from the Part 1 UML
+    (Strategy, Observer, Factory Method) and all business rules.
+    It deliberately has NO package or web dependencies so every rule can be unit tested
+    in isolation and reused unchanged by the Part 3 API/containers.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>GLMS.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GLMS.Tests" />
+  </ItemGroup>
+
+</Project>

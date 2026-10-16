@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechMove GLMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,500;100,600;112,600;112,700&family=Source+Sans+3:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+        var action = ViewContext.RouteData.Values["action"]?.ToString();
+        if (action is "StatusPage" or "Error") controller = null;   // no menu item is "current" on error pages
+        string Active(string name) => string.Equals(controller, name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+        var keyword = string.Equals(controller, "Contracts", StringComparison.OrdinalIgnoreCase) ? Context.Request.Query["Keyword"].ToString() : "";
+    }
+    <header class="topbar">
+        <div class="in">
+            <a class="logo" asp-controller="Home" asp-action="Index" aria-label="TechMove home">
+                <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+                    <rect x="1" y="7" width="28" height="16" rx="2" fill="#0F5D8C" />
+                    <path d="M6 10v10M10 10v10M14 10v10M18 10v10M22 10v10" stroke="#fff" stroke-width="1.6" opacity=".55" />
+                </svg>
+                <b>TechMove</b>
+            </a>
+            <nav class="mainnav" aria-label="Main">
+                <a class="@Active("Home")" asp-controller="Home" asp-action="Index">Home</a>
+                <a class="@Active("Contracts")" asp-controller="Contracts" asp-action="Index">Contracts</a>
+                <a class="@Active("ServiceRequests")" asp-controller="ServiceRequests" asp-action="Index">Service requests</a>
+                <a class="@Active("Clients")" asp-controller="Clients" asp-action="Index">Clients</a>
+            </nav>
+            <form class="topsearch" role="search" asp-controller="Contracts" asp-action="Index" method="get">
+                <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="#8792A2" stroke-width="1.8" /><path d="m11 11 3.6 3.6" stroke="#8792A2" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <input type="search" name="Keyword" value="@keyword" placeholder="Search contracts or clients" aria-label="Search contracts or clients" />
+            </form>
+            <a class="btn btn-primary" asp-controller="ServiceRequests" asp-action="Create">New service request</a>
+        </div>
+    </header>
+
+    <main role="main" class="page-wrap">
+        <partial name="_Flash" />
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="in">
+            <span>&copy; 2026 TechMove Logistics. Global Logistics Management System.</span>
+            <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">Rates by Exchange Rate API</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

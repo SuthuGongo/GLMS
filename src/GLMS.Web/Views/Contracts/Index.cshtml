@@ -1,0 +1,82 @@
+@model ContractSearchViewModel
+@{
+    ViewData["Title"] = "Contracts";
+    var count = Model.Results.Count;
+}
+
+<div class="page-header">
+    <div>
+        <h1>Contracts</h1>
+        <p>Find contracts by date range, status, service level, client or keyword.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">New contract</a>
+</div>
+
+<section class="card">
+    <form asp-action="Index" method="get" class="filter-card row g-2 align-items-end" style="padding:16px 20px 14px">
+        <div class="col-6 col-md-2">
+            <label asp-for="FromDate" class="form-label"></label>
+            <input asp-for="FromDate" class="form-control" type="date" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label asp-for="ToDate" class="form-label"></label>
+            <input asp-for="ToDate" class="form-control" type="date" />
+        </div>
+        <div class="col-6 col-md-2">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select">
+                <option value="">Any status</option>
+                @foreach (var s in Enum.GetValues<ContractStatus>())
+                {
+                    <option value="@s" selected="@(Model.Status == s)">@DisplayFormat.Label(s)</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label asp-for="ServiceLevel" class="form-label">Service level</label>
+            <select asp-for="ServiceLevel" class="form-select">
+                <option value="">Any level</option>
+                @foreach (var l in Enum.GetValues<ServiceLevel>())
+                {
+                    <option value="@l" selected="@(Model.ServiceLevel == l)">@DisplayFormat.Label(l)</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select">
+                <option value="">Any client</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <label asp-for="Keyword" class="form-label">Search</label>
+            <input asp-for="Keyword" class="form-control" placeholder="Number, title or client" />
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2 align-items-center mt-2">
+            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+            @if (Model.HasFilters)
+            {
+                <a asp-action="Index" class="btn btn-line btn-sm">Clear filters</a>
+            }
+        </div>
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors col-12"></div>
+    </form>
+
+    <div class="small-muted" style="padding:10px 20px;border-top:1px solid var(--line);background:#F8FAFC">
+        @(count == 1 ? "1 contract" : $"{count} contracts")@(Model.HasFilters ? " match your filters" : ""). A date range shows every contract whose term overlaps it.
+    </div>
+
+    @if (count > 0)
+    {
+        <div class="clist" style="margin-top:0">
+            @foreach (var c in Model.Results)
+            {
+                <partial name="_ContractRow" model="new ContractRowModel(c, Model.Today)" />
+            }
+        </div>
+    }
+    else
+    {
+        <p class="empty mb-0">No contracts match these filters. Try a wider date range or <a asp-action="Index">clear the filters</a>.</p>
+    }
+</section>

@@ -1,0 +1,69 @@
+@using GLMS.Core.Services
+@model WorkItem
+@{
+    var c = Model.Contract;
+    var r = Model.Request!; // only used for the request kinds, where it is always set
+    var client = c.Client?.Name ?? "The client";
+    var today = ViewData["Today"] as DateTime? ?? DateTime.Today;
+}
+<li class="@DisplayFormat.Tone(Model.Urgency)">
+    <span class="dot" aria-hidden="true"></span>
+    @switch (Model.Kind)
+    {
+        case WorkItemKind.OverdueRequest:
+            <div>
+                <div class="what">Request #@r.Id is past its response time</div>
+                <div class="why">@DisplayFormat.Shorten(r.Description, 60) on @c.ContractNumber was due @DisplayFormat.DueText(r.ResponseDueUtc) (@DisplayFormat.Label(c.ServiceLevel) service).</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="ServiceRequests" asp-action="Details" asp-route-id="@r.Id">Open request</a>
+            break;
+
+        case WorkItemKind.RequestDueSoon:
+            <div>
+                <div class="what">Request #@r.Id is due @DisplayFormat.DueText(r.ResponseDueUtc)</div>
+                <div class="why">@DisplayFormat.Shorten(r.Description, 60) on @c.ContractNumber for @client.</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="ServiceRequests" asp-action="Details" asp-route-id="@r.Id">Open request</a>
+            break;
+
+        case WorkItemKind.AwaitingSignature:
+            <div>
+                <div class="what">Upload the signed agreement for @c.ContractNumber</div>
+                <div class="why">@client. The contract stays in draft until the PDF is on file.</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">Upload PDF</a>
+            break;
+
+        case WorkItemKind.ReadyToActivate:
+            <div>
+                <div class="what">Activate @c.ContractNumber</div>
+                <div class="why">@client. The signed agreement is on file, so service requests can start once it is active.</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">Review contract</a>
+            break;
+
+        case WorkItemKind.ContractOnHold:
+            <div>
+                <div class="what">Decide on @c.ContractNumber, which is on hold</div>
+                <div class="why">@client can't raise service requests until you re-activate it or mark it expired.</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">Review contract</a>
+            break;
+
+        case WorkItemKind.ContractEndingSoon:
+            <div>
+                <div class="what">@c.ContractNumber ends in @DisplayFormat.Days(c.DaysRemaining(today))</div>
+                <div class="why">@client. Extend the end date if work should continue after @DisplayFormat.ShortDate(c.EndDate).</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="Contracts" asp-action="Edit" asp-route-id="@c.Id">Edit contract</a>
+            break;
+
+        case WorkItemKind.AwaitingExpiry:
+            <div>
+                <div class="what">@c.ContractNumber ended on @DisplayFormat.ShortDate(c.EndDate)</div>
+                <div class="why">@client. It will be expired automatically within the hour, and new service requests are already blocked.</div>
+            </div>
+            <a class="btn btn-line act" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">View contract</a>
+            break;
+    }
+</li>
