@@ -4,7 +4,7 @@ using GLMS.Core.Exceptions;
 using GLMS.Core.Querying;
 using Microsoft.EntityFrameworkCore;
 
-namespace GLMS.Web.Data;
+namespace GLMS.Api.Data;
 
 /// <summary>
 /// Saves through EF Core and turns database errors into messages the user can act on, so a clash that slips

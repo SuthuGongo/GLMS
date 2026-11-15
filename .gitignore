@@ -485,3 +485,4 @@ $RECYCLE.BIN/
 
 # GLMS: uploaded signed agreements are runtime data
 src/GLMS.Web/App_Data/
+src/GLMS.Api/App_Data/

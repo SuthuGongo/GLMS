@@ -1,5 +1,4 @@
-using GLMS.Core.Exceptions;
-using GLMS.Core.Services;
+using GLMS.Web.ApiClients;
 using GLMS.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,17 +6,13 @@ namespace GLMS.Web.Controllers;
 
 public class ClientsController : Controller
 {
-    private readonly ClientService _clients;
+    private readonly IClientsApi _clients;
 
-    public ClientsController(ClientService clients) => _clients = clients;
+    public ClientsController(IClientsApi clients) => _clients = clients;
 
     public async Task<IActionResult> Index(CancellationToken ct) => View(await _clients.GetAllAsync(ct));
 
-    public async Task<IActionResult> Details(int id, CancellationToken ct)
-    {
-        try { return View(await _clients.GetAsync(id, ct)); }
-        catch (NotFoundException) { return NotFound(); }
-    }
+    public async Task<IActionResult> Details(int id, CancellationToken ct) => View(await _clients.GetAsync(id, ct));
 
     public IActionResult Create() => View(new ClientFormViewModel());
 
@@ -27,29 +22,19 @@ public class ClientsController : Controller
         if (!ModelState.IsValid) return View(model);
         try
         {
-            var client = await _clients.CreateAsync(ToInput(model), ct);
+            var client = await _clients.CreateAsync(model.ToRequest(), ct);
             this.Flash($"Client '{client.Name}' was created.");
             return RedirectToAction(nameof(Details), new { id = client.Id });
         }
-        catch (BusinessRuleException ex)
+        catch (ApiValidationException ex)
         {
-            ModelState.AddBusinessErrors(ex);
+            ModelState.AddApiErrors(ex, typeof(ClientFormViewModel));
             return View(model);
         }
     }
 
-    public async Task<IActionResult> Edit(int id, CancellationToken ct)
-    {
-        try
-        {
-            var c = await _clients.GetAsync(id, ct);
-            return View(new ClientFormViewModel
-            {
-                Id = c.Id, Name = c.Name, ContactPerson = c.ContactPerson, Email = c.Email, PhoneNumber = c.PhoneNumber, Region = c.Region
-            });
-        }
-        catch (NotFoundException) { return NotFound(); }
-    }
+    public async Task<IActionResult> Edit(int id, CancellationToken ct) =>
+        View(ClientFormViewModel.From(await _clients.GetAsync(id, ct)));
 
     [HttpPost]
     public async Task<IActionResult> Edit(int id, ClientFormViewModel model, CancellationToken ct)
@@ -58,14 +43,13 @@ public class ClientsController : Controller
         if (!ModelState.IsValid) return View(model);
         try
         {
-            await _clients.UpdateAsync(id, ToInput(model), ct);
+            await _clients.UpdateAsync(id, model.ToRequest(), ct);
             this.Flash("Client details were updated.");
             return RedirectToAction(nameof(Details), new { id });
         }
-        catch (NotFoundException) { return NotFound(); }
-        catch (BusinessRuleException ex)
+        catch (ApiValidationException ex)
         {
-            ModelState.AddBusinessErrors(ex);
+            ModelState.AddApiErrors(ex, typeof(ClientFormViewModel));
             return View(model);
         }
     }
@@ -75,18 +59,14 @@ public class ClientsController : Controller
     {
         try
         {
-            await _clients.DeleteAsync(id, ct);
+            await _clients.DeleteAsync(id, ct);   // Admin role only (403 is shown by ApiExceptionFilter)
             this.Flash("Client was deleted.");
             return RedirectToAction(nameof(Index));
         }
-        catch (NotFoundException) { return NotFound(); }
-        catch (BusinessRuleException ex)
+        catch (ApiValidationException ex)
         {
-            this.Flash(ex.Message, "danger");
+            this.Flash(ex.AllMessages, "danger");
             return RedirectToAction(nameof(Details), new { id });
         }
     }
-
-    private static ClientInput ToInput(ClientFormViewModel m) =>
-        new(m.Name, m.ContactPerson ?? string.Empty, m.Email, m.PhoneNumber ?? string.Empty, m.Region);
 }

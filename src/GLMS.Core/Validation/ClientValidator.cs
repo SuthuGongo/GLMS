@@ -10,14 +10,14 @@ namespace GLMS.Core.Validation;
 /// </summary>
 public static partial class ClientValidator
 {
-    public const int NameMaxLength = 150;
-    public const int ContactMaxLength = 120;
-    public const int EmailMaxLength = 256;
-    public const int PhoneMaxLength = 30;
-    public const int RegionMaxLength = 80;
+    public const int NameMaxLength = ValidationLimits.ClientNameMaxLength;
+    public const int ContactMaxLength = ValidationLimits.ClientContactMaxLength;
+    public const int EmailMaxLength = ValidationLimits.ClientEmailMaxLength;
+    public const int PhoneMaxLength = ValidationLimits.ClientPhoneMaxLength;
+    public const int RegionMaxLength = ValidationLimits.ClientRegionMaxLength;
 
     /// <summary>Shared with the browser check on the client form.</summary>
-    public const string EmailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+    public const string EmailPattern = ValidationLimits.EmailPattern;
 
     public static IReadOnlyList<string> Validate(ClientInput? input)
     {
@@ -62,6 +62,6 @@ public static partial class ClientValidator
     [GeneratedRegex(EmailPattern)]
     private static partial Regex EmailShape();
 
-    [GeneratedRegex(@"^\+?[0-9 ()\-]{6,30}$")]
+    [GeneratedRegex(ValidationLimits.PhonePattern)]
     private static partial Regex PhoneShape();
 }

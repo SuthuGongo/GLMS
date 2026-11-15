@@ -17,4 +17,13 @@
     <InternalsVisibleTo Include="GLMS.Tests" />
   </ItemGroup>
 
+  <!-- Part 3: enums and validation limits now come from the shared API contract. -->
+  <ItemGroup>
+    <ProjectReference Include="..\GLMS.Shared\GLMS.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="GLMS.Shared" />
+  </ItemGroup>
+
 </Project>

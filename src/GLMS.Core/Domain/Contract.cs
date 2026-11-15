@@ -134,33 +134,26 @@ public class Contract
     }
 
     /// <summary>True when <paramref name="date"/> falls inside the contract term (inclusive).</summary>
-    public bool IsWithinTerm(DateTime date) => date.Date >= StartDate.Date && date.Date <= EndDate.Date;
+    public bool IsWithinTerm(DateTime date) => ContractTerm.IsWithinTerm(StartDate, EndDate, date);
 
     /// <summary>True when the term has ended but the status has not caught up yet.</summary>
-    public bool IsOverdueForExpiry(DateTime today) =>
-        (Status == ContractStatus.Active || Status == ContractStatus.OnHold) && EndDate.Date < today.Date;
+    public bool IsOverdueForExpiry(DateTime today) => ContractTerm.IsOverdueForExpiry(Status, EndDate, today);
 
     public string Display => string.IsNullOrWhiteSpace(ContractNumber) ? $"#{Id}" : ContractNumber;
 
     // ------------------------------------------------------------------ Term progress (drawn as a "route" in the UI)
 
     /// <summary>Total length of the contract term in days.</summary>
-    public int TermLengthDays() => Math.Max(0, (EndDate.Date - StartDate.Date).Days);
+    public int TermLengthDays() => ContractTerm.LengthDays(StartDate, EndDate);
 
     /// <summary>How far through its term the contract is on <paramref name="today"/>, from 0 (not started) to 1 (ended).</summary>
-    public double TermProgress(DateTime today)
-    {
-        var total = TermLengthDays();
-        if (total == 0) return today.Date >= EndDate.Date ? 1 : 0;
-        var elapsed = (today.Date - StartDate.Date).TotalDays;
-        return Math.Clamp(elapsed / total, 0, 1);
-    }
+    public double TermProgress(DateTime today) => ContractTerm.Progress(StartDate, EndDate, today);
 
     /// <summary>Days until the term ends (0 on the last day or after it).</summary>
-    public int DaysRemaining(DateTime today) => Math.Max(0, (EndDate.Date - today.Date).Days);
+    public int DaysRemaining(DateTime today) => ContractTerm.DaysRemaining(EndDate, today);
 
     /// <summary>Days until the term starts (0 once it has started).</summary>
-    public int DaysUntilStart(DateTime today) => Math.Max(0, (StartDate.Date - today.Date).Days);
+    public int DaysUntilStart(DateTime today) => ContractTerm.DaysUntilStart(StartDate, today);
 
     /// <summary>
     /// Used only by data seeding / data import to restore a persisted status without

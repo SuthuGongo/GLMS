@@ -17,6 +17,9 @@
         if (action is "StatusPage" or "Error") controller = null;   // no menu item is "current" on error pages
         string Active(string name) => string.Equals(controller, name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
         var keyword = string.Equals(controller, "Contracts", StringComparison.OrdinalIgnoreCase) ? Context.Request.Query["Keyword"].ToString() : "";
+        var signedIn = User.Identity?.IsAuthenticated == true;
+        var displayName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? User.Identity?.Name;
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value == "Admin" ? "Admin" : "Logistics manager";
     }
     <header class="topbar">
         <div class="in">
@@ -27,6 +30,8 @@
                 </svg>
                 <b>TechMove</b>
             </a>
+            @if (signedIn)
+            {
             <nav class="mainnav" aria-label="Main">
                 <a class="@Active("Home")" asp-controller="Home" asp-action="Index">Home</a>
                 <a class="@Active("Contracts")" asp-controller="Contracts" asp-action="Index">Contracts</a>
@@ -38,6 +43,11 @@
                 <input type="search" name="Keyword" value="@keyword" placeholder="Search contracts or clients" aria-label="Search contracts or clients" />
             </form>
             <a class="btn btn-primary" asp-controller="ServiceRequests" asp-action="Create">New service request</a>
+            <form class="usermenu" asp-controller="Account" asp-action="Logout" method="post" title="Signed in as @displayName (@role)">
+                <span class="who"><b>@displayName</b><small>@role</small></span>
+                <button type="submit" class="btn btn-line btn-sm">Sign out</button>
+            </form>
+            }
         </div>
     </header>
 

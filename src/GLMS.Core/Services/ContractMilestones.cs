@@ -2,16 +2,7 @@ using GLMS.Core.Domain;
 
 namespace GLMS.Core.Services;
 
-/// <summary>
-/// Reached = done, ToDo = needs someone to act now, Upcoming = will happen later.
-/// (Same three states freight platforms such as Shypple use on their shipment timelines.)
-/// </summary>
-public enum MilestoneState
-{
-    Reached,
-    ToDo,
-    Upcoming
-}
+// MilestoneState lives in GLMS.Shared (Part 3).
 
 public sealed record Milestone(string Title, string Detail, MilestoneState State, DateTime? Date, int? RequestId = null);
 

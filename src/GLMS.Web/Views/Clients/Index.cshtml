@@ -1,4 +1,4 @@
-@model IReadOnlyList<Client>
+@model IReadOnlyList<ClientDto>
 @{ ViewData["Title"] = "Clients"; }
 
 <div class="page-header">
@@ -21,7 +21,7 @@
                         <td>@c.ContactPerson<div class="small-muted">@c.PhoneNumber</div></td>
                         <td>@c.Email</td>
                         <td>@c.Region</td>
-                        <td class="text-center">@c.Contracts.Count</td>
+                        <td class="text-center">@c.ContractCount</td>
                     </tr>
                 }
                 @if (!Model.Any())

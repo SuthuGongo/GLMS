@@ -1,0 +1,20 @@
+@model string
+@{ ViewData["Title"] = "Service unavailable"; }
+
+<div class="page-header">
+    <div>
+        <h1>The GLMS service is unavailable</h1>
+        <p>@Model</p>
+    </div>
+</div>
+
+<section class="card">
+    <div class="card-body">
+        <p>This page gets its data from the GLMS API, which did not answer. Nothing you entered has been lost or half-saved.</p>
+        <ul class="small-muted">
+            <li>Wait a few seconds and <a href="@Context.Request.Path@Context.Request.QueryString">try again</a>.</li>
+            <li>If you are running the system with Docker, check that the <code>glms-backend-api</code> and <code>sql-server-db</code> containers are running.</li>
+        </ul>
+        <a class="btn btn-line" asp-controller="Home" asp-action="Index">Back to home</a>
+    </div>
+</section>

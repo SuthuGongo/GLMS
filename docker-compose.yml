@@ -1,0 +1,100 @@
+# =====================================================================================================
+# TechMove GLMS - the whole system in three containers on one private network:
+#
+#   browser --> glms-frontend-web (MVC, :5000) --HTTP--> glms-backend-api (Web API, :5080) --> sql-server-db (:1433)
+#
+#   docker compose up -d --build        build the images and start everything
+#   http://localhost:5000                the MVC site (sign in as admin / Admin@12345)
+#   http://localhost:5080/swagger        the API's Swagger UI
+#   docker compose down                 stop (data is kept in the named volumes; add -v to wipe it)
+#
+# Secrets and settings come from environment variables. Copy .env.example to .env to change them;
+# the defaults below are for local demos only.
+# =====================================================================================================
+name: glms
+
+services:
+
+  # ---------- Container 1: the database ----------
+  sql-server-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:-Glms_Strong!Passw0rd}
+    ports:
+      - "14330:1433"          # optional: connect from SSMS / Azure Data Studio on localhost,14330
+    volumes:
+      - glms-sql-data:/var/opt/mssql
+    networks:
+      - glms-net
+    healthcheck:
+      # Healthy once SQL Server accepts a login (newer images ship sqlcmd in mssql-tools18).
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' -b -o /dev/null || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------- Container 2: the Web API (connects to Container 1) ----------
+  glms-backend-api:
+    build:
+      context: .
+      dockerfile: src/GLMS.Api/Dockerfile
+    image: glms-backend-api:latest
+    container_name: glms-backend-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # "sql-server-db" is resolved by Docker's internal DNS to the database container.
+      ConnectionStrings__GlmsDatabase: "Server=sql-server-db,1433;Database=GLMS_Db;User Id=sa;Password=${SA_PASSWORD:-Glms_Strong!Passw0rd};TrustServerCertificate=True;Encrypt=True"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:-glms-docker-demo-signing-key-change-me-0123456789}
+      Jwt__ExpiryMinutes: "120"
+      SeedUsers__AdminPassword: ${ADMIN_PASSWORD:-Admin@12345}
+      SeedUsers__ManagerPassword: ${MANAGER_PASSWORD:-Manager@12345}
+      CurrencyApi__Mode: ${CURRENCY_MODE:-Live}     # Live = ExchangeRate-API with cache/fallback; Fixed = offline demo
+      Swagger__Enabled: "true"
+    ports:
+      - "5080:8080"           # Swagger UI on http://localhost:5080/swagger
+    volumes:
+      - glms-agreements:/app/App_Data/agreements
+    networks:
+      - glms-net
+    depends_on:
+      sql-server-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------- Container 3: the MVC front end (connects to Container 2) ----------
+  glms-frontend-web:
+    build:
+      context: .
+      dockerfile: src/GLMS.Web/Dockerfile
+    image: glms-frontend-web:latest
+    container_name: glms-frontend-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Internal Docker networking: the API's SERVICE NAME, container port 8080 (not localhost).
+      GlmsApi__BaseUrl: http://glms-backend-api:8080/
+      DataProtection__KeysPath: /app/keys
+    ports:
+      - "5000:8080"           # the site on http://localhost:5000
+    volumes:
+      - glms-web-keys:/app/keys
+    networks:
+      - glms-net
+    depends_on:
+      glms-backend-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  glms-net:
+    name: glms-net
+    driver: bridge
+
+volumes:
+  glms-sql-data:
+  glms-agreements:
+  glms-web-keys:

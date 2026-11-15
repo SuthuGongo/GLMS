@@ -1,8 +1,9 @@
+using GLMS.Api.Auth;
 using GLMS.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace GLMS.Web.Data;
+namespace GLMS.Api.Data;
 
 /// <summary>
 /// EF Core context for the SQL Server database.
@@ -14,6 +15,7 @@ namespace GLMS.Web.Data;
 ///   Clients 1 --- * Contracts 1 --- * ServiceRequests * --- 1 ExchangeRates
 ///   Contracts 1 --- 0..1 ContractAgreements
 ///   Contracts 1 --- * ContractAuditEntries
+///   Users (stand-alone, Part 3 authentication)
 /// Every non-key column depends on its own table's key only. Document details live in ContractAgreements
 /// and rate details live in ExchangeRates, so neither is repeated. The one stored derived value,
 /// ServiceRequests.CostZar, is kept on purpose: the brief requires the local cost to be saved, and it records
@@ -29,6 +31,9 @@ public class GlmsDbContext : DbContext
     public DbSet<ServiceRequest> ServiceRequests => Set<ServiceRequest>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<ContractAuditEntry> ContractAuditEntries => Set<ContractAuditEntry>();
+
+    /// <summary>Part 3: people who can sign in (JWT authentication).</summary>
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

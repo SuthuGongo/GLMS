@@ -1,9 +1,11 @@
 using System.Text;
+using GLMS.Api.Auth;
 using GLMS.Core.Abstractions;
 using GLMS.Core.Domain;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace GLMS.Web.Data;
+namespace GLMS.Api.Data;
 
 /// <summary>
 /// Seeds demo data the first time the database is empty, so the app can be demonstrated
@@ -75,6 +77,28 @@ public static class DbSeeder
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Part 3: creates the two demo sign-ins the first time the Users table is empty. Passwords come from
+    /// configuration (appsettings / Docker Compose environment), and only their PBKDF2 hashes are stored.
+    /// </summary>
+    public static async Task SeedUsersAsync(GlmsDbContext db, IPasswordHasher<AppUser> hasher, SeedUserOptions options, IClock clock, CancellationToken ct = default)
+    {
+        if (await db.Users.AnyAsync(ct)) return;
+
+        AppUser Create(string username, string displayName, string role, string password)
+        {
+            var user = new AppUser { Username = username, DisplayName = displayName, Role = role, CreatedUtc = clock.UtcNow };
+            user.PasswordHash = hasher.HashPassword(user, password);
+            return user;
+        }
+
+        db.Users.AddRange(
+            Create("admin", "System Administrator", GLMS.Shared.GlmsRoles.Admin, options.AdminPassword),
+            Create("manager", "Logistics Manager", GLMS.Shared.GlmsRoles.Manager, options.ManagerPassword));
+
+        await db.SaveChangesAsync(ct);
+    }
+
     private static ServiceRequest NewRequest(Contract contract, string description, decimal usd, ExchangeRate rate, RequestPriority priority, DateTime createdUtc) => new()
     {
         Contract = contract,
@@ -122,4 +146,11 @@ public static class DbSeeder
 
         return Encoding.ASCII.GetBytes(pdf.ToString());
     }
+}
+
+/// <summary>Passwords for the seeded demo users (section "SeedUsers" in configuration).</summary>
+public sealed class SeedUserOptions
+{
+    public string AdminPassword { get; set; } = "Admin@12345";
+    public string ManagerPassword { get; set; } = "Manager@12345";
 }

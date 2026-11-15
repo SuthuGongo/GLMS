@@ -1,9 +1,8 @@
-@using GLMS.Core.Services
-@model WorkItem
+@model WorkItemDto
 @{
     var c = Model.Contract;
     var r = Model.Request!; // only used for the request kinds, where it is always set
-    var client = c.Client?.Name ?? "The client";
+    var client = string.IsNullOrEmpty(c.ClientName) ? "The client" : c.ClientName;
     var today = ViewData["Today"] as DateTime? ?? DateTime.Today;
 }
 <li class="@DisplayFormat.Tone(Model.Urgency)">

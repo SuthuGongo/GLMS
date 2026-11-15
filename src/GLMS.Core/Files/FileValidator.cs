@@ -3,9 +3,9 @@ using GLMS.Core.Exceptions;
 namespace GLMS.Core.Files;
 public static class FileValidator
 {
-    public const string AllowedExtension = ".pdf";
-    public const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
-    public const int MaxFileNameLength = 200;
+    public const string AllowedExtension = ValidationLimits.AgreementExtension;
+    public const long MaxFileSizeBytes = ValidationLimits.AgreementMaxBytes; // 10 MB
+    public const int MaxFileNameLength = ValidationLimits.AgreementMaxFileNameLength;
 
     private static readonly byte[] PdfSignature = "%PDF-"u8.ToArray();
     private static readonly byte[] PdfEndMarker = "%%EOF"u8.ToArray();

@@ -1,5 +1,4 @@
 @model ContractDetailsViewModel
-@using GLMS.Core.Services
 @{
     var c = Model.Contract;
     var today = Model.Today;
@@ -30,7 +29,7 @@
 <div class="page-header d-head">
     <div>
         <h1>@c.Title <span class="chip @DisplayFormat.Tone(c.Status)">@DisplayFormat.Label(c.Status)</span></h1>
-        <p>@c.ContractNumber for <a asp-controller="Clients" asp-action="Details" asp-route-id="@c.ClientId">@c.Client?.Name</a>, @DisplayFormat.Label(c.ServiceLevel) service</p>
+        <p>@c.ContractNumber for <a asp-controller="Clients" asp-action="Details" asp-route-id="@c.ClientId">@c.ClientName</a>, @DisplayFormat.Label(c.ServiceLevel) service</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         @foreach (var next in Model.NextStatuses)
@@ -167,8 +166,8 @@
                 <div class="card-h"><h2>Details</h2></div>
                 <div class="card-body pt-2">
                     <dl class="dl-grid">
-                        <dt>Client</dt><dd>@c.Client?.Name</dd>
-                        <dt>Region</dt><dd>@c.Client?.Region</dd>
+                        <dt>Client</dt><dd>@c.ClientName</dd>
+                        <dt>Region</dt><dd>@c.ClientRegion</dd>
                         <dt>Service level</dt><dd>@DisplayFormat.Label(c.ServiceLevel), @(c.ServiceLevel == ServiceLevel.PriorityLogistics ? "8-hour response (2 hours if urgent)" : "48-hour response")</dd>
                         <dt>Open requests</dt><dd>@c.ServiceRequests.Count(r => r.IsOpen)</dd>
                         <dt>Created</dt><dd>@DisplayFormat.DateTime(c.CreatedUtc)</dd>

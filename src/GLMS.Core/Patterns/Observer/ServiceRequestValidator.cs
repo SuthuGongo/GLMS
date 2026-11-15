@@ -9,8 +9,8 @@ public sealed record NewServiceRequest(int ContractId, string Description, decim
 
 public sealed class ServiceRequestValidator : IContractObserver
 {
-    public const int MaxDescriptionLength = 1000;
-    public const decimal MaxCostUsd = 10_000_000m;
+    public const int MaxDescriptionLength = ValidationLimits.RequestDescriptionMaxLength;
+    public const decimal MaxCostUsd = ValidationLimits.MaxCostUsd;
 
     private readonly IClock _clock;
 

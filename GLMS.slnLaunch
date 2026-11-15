@@ -1,0 +1,9 @@
+[
+  {
+    "Name": "GLMS: API + Web",
+    "Projects": [
+      { "Path": "src\\GLMS.Api\\GLMS.Api.csproj", "Action": "Start", "DebugTarget": "http" },
+      { "Path": "src\\GLMS.Web\\GLMS.Web.csproj", "Action": "Start", "DebugTarget": "http" }
+    ]
+  }
+]

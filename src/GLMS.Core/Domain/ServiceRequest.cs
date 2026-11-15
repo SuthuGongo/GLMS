@@ -40,7 +40,7 @@ public class ServiceRequest
     /// <summary>Why the system (not a user) last changed the status, e.g. "Contract expired".</summary>
     public string? StatusReason { get; private set; }
 
-    public bool IsOpen => Status is ServiceRequestStatus.Pending or ServiceRequestStatus.InProgress or ServiceRequestStatus.OnHold;
+    public bool IsOpen => RequestStatusRules.IsOpen(Status);
 
     /// <summary>
     /// Open, not paused, and past its SLA response time. Requests on hold are not counted as

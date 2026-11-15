@@ -1,6 +1,6 @@
 using GLMS.Core.Services;
 
-namespace GLMS.Web.Infrastructure;
+namespace GLMS.Api.Infrastructure;
 
 /// <summary>
 /// "Automated status tracking": a background service that expires contracts whose end date has

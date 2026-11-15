@@ -1,0 +1,16 @@
+# Keep the build context small and the image clean: no build output, IDE files, git history or runtime data.
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/*.user
+**/App_Data/
+**/TestResults/
+.git/
+.github/
+docs/
+Database/
+tests/
+*.md
+.env
+docker-compose*.yml

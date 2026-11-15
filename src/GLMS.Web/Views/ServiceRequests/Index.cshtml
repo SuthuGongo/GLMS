@@ -23,7 +23,7 @@
                 {
                     <tr>
                         <td><a asp-action="Details" asp-route-id="@r.Id" class="fw-semibold">#@r.Id</a></td>
-                        <td>@r.Contract?.ContractNumber<div class="small-muted">@r.Contract?.Client?.Name</div></td>
+                        <td>@r.ContractNumber<div class="small-muted">@r.ClientName</div></td>
                         <td class="text-truncate" style="max-width:260px">@r.Description</td>
                         <td class="text-end">@DisplayFormat.Usd(r.CostUsd)</td>
                         <td class="text-end fw-semibold">@DisplayFormat.Zar(r.CostZar)</td>

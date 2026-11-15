@@ -1,10 +1,10 @@
-@model ServiceRequest
+@model ServiceRequestDto
 @{ ViewData["Title"] = $"Service request #{Model.Id}"; }
 
 <div class="page-header">
     <div>
         <h1>Service request #@Model.Id <span class="@DisplayFormat.BadgeClass(Model.Status) align-middle ms-2">@DisplayFormat.Label(Model.Status)</span></h1>
-        <p>Contract <a asp-controller="Contracts" asp-action="Details" asp-route-id="@Model.ContractId">@Model.Contract?.ContractNumber</a> &middot; @Model.Contract?.Client?.Name</p>
+        <p>Contract <a asp-controller="Contracts" asp-action="Details" asp-route-id="@Model.ContractId">@Model.ContractNumber</a> &middot; @Model.ClientName</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
         @if (Model.Status == ServiceRequestStatus.Pending)
@@ -35,7 +35,7 @@
             <dl class="dl-grid">
                 <dt>Description</dt><dd style="white-space:pre-line">@Model.Description</dd>
                 <dt>Priority</dt><dd><span class="@DisplayFormat.BadgeClass(Model.Priority)">@Model.Priority</span></dd>
-                <dt>SLA tier</dt><dd>@(Model.Contract is null ? "-" : DisplayFormat.Label(Model.Contract.ServiceLevel))</dd>
+                <dt>SLA tier</dt><dd>@DisplayFormat.Label(Model.ServiceLevel)</dd>
                 <dt>Raised</dt><dd>@DisplayFormat.DateTime(Model.CreatedUtc)</dd>
                 <dt>Response due</dt><dd>@DisplayFormat.DateTime(Model.ResponseDueUtc)</dd>
                 @if (Model.ClosedUtc.HasValue)

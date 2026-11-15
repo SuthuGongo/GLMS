@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!--
+    GLMS.Web: the MVC front end (Part 3 presentation layer).
+    No EF Core package, no connection string and no reference to GLMS.Core: it only knows the API contract
+    (GLMS.Shared) and reaches all data through GLMS.Api with HttpClient.
+  -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -9,25 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\GLMS.Core\GLMS.Core.csproj" />
-  </ItemGroup>
-
-  <!-- Uploaded agreements are runtime data, not source code. -->
-  <ItemGroup>
-    <Content Remove="App_Data\**" />
-    <None Remove="App_Data\**" />
+    <ProjectReference Include="..\GLMS.Shared\GLMS.Shared.csproj" />
   </ItemGroup>
 
 </Project>

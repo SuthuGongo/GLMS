@@ -2,24 +2,7 @@ using GLMS.Core.Domain;
 
 namespace GLMS.Core.Services;
 
-/// <summary>What kind of follow-up a work item asks for.</summary>
-public enum WorkItemKind
-{
-    OverdueRequest,      // an open request is past its SLA response time
-    RequestDueSoon,      // an open request is due within the next 24 hours
-    AwaitingSignature,   // a draft contract has no signed PDF yet
-    ReadyToActivate,     // a draft contract has its PDF and can be activated
-    ContractOnHold,      // a contract is on hold, so its client can't raise requests
-    ContractEndingSoon,  // an active contract ends within 30 days
-    AwaitingExpiry       // an active/on-hold contract is past its end date and will be expired by the background job
-}
-
-public enum WorkItemUrgency
-{
-    Critical = 0,
-    Warning = 1,
-    Action = 2
-}
+// WorkItemKind and WorkItemUrgency live in GLMS.Shared (Part 3) so the API can return them.
 
 /// <summary>One line on the home page "To do" list.</summary>
 public sealed record WorkItem(

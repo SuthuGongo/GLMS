@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    GLMS.Shared is the API CONTRACT between the two services (Part 3, Service-Oriented Architecture).
+    It holds the enums, request/response DTOs and validation limits that BOTH the Web API and the MVC
+    front end compile against, so the JSON shape can never drift between them.
+    It has no dependencies at all: no EF Core, no ASP.NET, no business logic.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>GLMS.Shared</RootNamespace>
+  </PropertyGroup>
+
+</Project>

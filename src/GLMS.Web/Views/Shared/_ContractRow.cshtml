@@ -33,7 +33,7 @@
 <a class="crow @DisplayFormat.Tone(c.Status)" asp-controller="Contracts" asp-action="Details" asp-route-id="@c.Id">
     <div class="ref">
         <b>@c.ContractNumber</b>
-        <span>@c.Client?.Name</span>
+        <span>@c.ClientName</span>
         <em>@DisplayFormat.Label(c.ServiceLevel)</em>
     </div>
     <div class="term" aria-label="Term @DisplayFormat.ShortDate(c.StartDate) to @DisplayFormat.ShortDate(c.EndDate)">

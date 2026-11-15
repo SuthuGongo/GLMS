@@ -1,94 +1,79 @@
 using System.Globalization;
-using GLMS.Core.Abstractions;
-using GLMS.Core.Files;
-using GLMS.Core.Patterns.Factory;
-using GLMS.Core.Patterns.Observer;
-using GLMS.Core.Patterns.Strategy;
-using GLMS.Core.Services;
-using GLMS.Web.Data;
-using GLMS.Web.Infrastructure;
+using GLMS.Shared;
+using GLMS.Web.ApiClients;
+using GLMS.Web.Filters;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+
+// =====================================================================================================
+// GLMS.Web - the PRESENTATION LAYER (Part 3). It has no database connection and no reference to GLMS.Core:
+// every page gets and saves its data by calling GLMS.Api over HTTP (typed HttpClients in ApiClients/).
+// =====================================================================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------------------------------------------------------- MVC
 builder.Services.AddControllersWithViews(options =>
 {
-    // Every POST form must carry an anti-forgery token.
-    options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()); // every POST form carries an anti-forgery token
+    options.Filters.Add<ApiExceptionFilter>();                         // API down / 401 / 403 / 404 handled once
 });
 
-// Signed agreements are capped at 10 MB (also enforced in FileValidator).
-builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = FileValidator.MaxFileSizeBytes + 1024 * 1024);
+// Signed agreements are capped at 10 MB (the API enforces it again).
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = ValidationLimits.AgreementMaxBytes + 1024 * 1024);
 
-// ---------------------------------------------------------------- Database (connection string lives in appsettings.json)
-var connectionString = builder.Configuration.GetConnectionString("GlmsDatabase")
-    ?? throw new InvalidOperationException("Connection string 'GlmsDatabase' is missing from appsettings.json.");
+// ---------------------------------------------------------------- Authentication: cookie for the browser, JWT for the API
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/Login";
+        options.Cookie.Name = "glms.auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = false;   // the cookie must not outlive the JWT inside it
+    });
 
-builder.Services.AddDbContext<GlmsDbContext>(options =>
-    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure(3)));
+// Every page needs a signed-in user unless it is marked [AllowAnonymous] (login, error pages).
+builder.Services.AddAuthorization(options =>
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
-builder.Services.AddScoped<IClientRepository, ClientRepository>();
-builder.Services.AddScoped<IContractRepository, ContractRepository>();
-builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
-builder.Services.AddScoped<IAuditSink, EfAuditSink>();
+// In Docker the keys that encrypt the cookie live on a volume, so users stay signed in across container restarts.
+var keysPath = builder.Configuration.GetValue<string>("DataProtection:KeysPath");
+var dataProtection = builder.Services.AddDataProtection().SetApplicationName("glms-web");
+if (!string.IsNullOrWhiteSpace(keysPath))
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 
-// ---------------------------------------------------------------- Cross-cutting
-builder.Services.AddSingleton<IClock, SystemClock>();
+// ---------------------------------------------------------------- Typed HttpClients for GLMS.Api (the frontend "service layer")
+// In Docker Compose: GlmsApi__BaseUrl=http://glms-backend-api:8080/ (the API's service name on the internal network).
+var apiBaseUrl = builder.Configuration.GetValue<string>("GlmsApi:BaseUrl")
+    ?? throw new InvalidOperationException("GlmsApi:BaseUrl is missing (appsettings.json or the GlmsApi__BaseUrl environment variable).");
+var apiTimeout = TimeSpan.FromSeconds(builder.Configuration.GetValue("GlmsApi:TimeoutSeconds", 20));
 
-var storageRoot = Path.Combine(builder.Environment.ContentRootPath,
-    builder.Configuration.GetValue<string>("FileStorage:RootPath") ?? "App_Data/agreements");
-builder.Services.AddSingleton<IFileStorageService>(new LocalFileStorageService(storageRoot));
-
-// ---------------------------------------------------------------- STRATEGY pattern wiring
-// Live API strategy gets a typed HttpClient from IHttpClientFactory (sockets are pooled correctly).
-builder.Services.AddHttpClient<LiveRateApiStrategy>(client =>
+void ConfigureApiClient(HttpClient client)
 {
-    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("CurrencyApi:BaseUrl") ?? LiveRateApiStrategy.DefaultBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue("CurrencyApi:TimeoutSeconds", 8));
-});
-builder.Services.AddSingleton<ExchangeRateCache>();
-var cacheMinutes = builder.Configuration.GetValue("CurrencyApi:CacheMinutes", 60);
-var maxStaleHours = builder.Configuration.GetValue("CurrencyApi:MaxStaleHours", 24);
-
-
-var currencyMode = builder.Configuration.GetValue<string>("CurrencyApi:Mode") ?? "Live";
-if (string.Equals(currencyMode, "Fixed", StringComparison.OrdinalIgnoreCase))
-{
-    var fixedRates = builder.Configuration.GetSection("CurrencyApi:FixedRates").Get<Dictionary<string, decimal>>()
-        ?? throw new InvalidOperationException("CurrencyApi:Mode is Fixed but CurrencyApi:FixedRates is missing from appsettings.json.");
-    builder.Services.AddSingleton<ICurrencyConversionStrategy>(sp => new FixedRateStrategy(fixedRates, sp.GetRequiredService<IClock>()));
+    client.BaseAddress = new Uri(apiBaseUrl.EndsWith('/') ? apiBaseUrl : apiBaseUrl + "/");
+    client.Timeout = apiTimeout;
+    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 }
-else
-{
-    builder.Services.AddScoped<ICurrencyConversionStrategy>(sp => new CachedRateStrategy(
-        sp.GetRequiredService<LiveRateApiStrategy>(),
-        sp.GetRequiredService<ExchangeRateCache>(),
-        sp.GetRequiredService<IClock>(),
-        TimeSpan.FromMinutes(cacheMinutes),
-        TimeSpan.FromHours(maxStaleHours)));
-}
-builder.Services.AddScoped<FinancialService>();
 
-// OBSERVER pattern wiring
-// One ServiceRequestValidator instance per request is used both as the validator AND as an observer.
-builder.Services.AddScoped<ServiceRequestValidator>();
-builder.Services.AddScoped<IContractObserver>(sp => sp.GetRequiredService<ServiceRequestValidator>());
-builder.Services.AddScoped<IContractObserver, ComplianceLogger>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<BearerTokenHandler>();
 
-//  FACTORY METHOD pattern wiring
-builder.Services.AddScoped<ServiceRequestFactory, StandardSLAFactory>();
-builder.Services.AddScoped<ServiceRequestFactory, PriorityLogisticsFactory>();
-builder.Services.AddScoped<ServiceRequestFactoryResolver>();
+builder.Services.AddHttpClient<IAuthApi, AuthApi>(ConfigureApiClient); // login: no token yet
+builder.Services.AddHttpClient<IClientsApi, ClientsApi>(ConfigureApiClient).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IContractsApi, ContractsApi>(ConfigureApiClient).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IServiceRequestsApi, ServiceRequestsApi>(ConfigureApiClient).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IRatesApi, RatesApi>(ConfigureApiClient).AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IDashboardApi, DashboardApi>(ConfigureApiClient).AddHttpMessageHandler<BearerTokenHandler>();
 
-//  Application services
-builder.Services.AddScoped<ClientService>();
-builder.Services.AddScoped<ContractService>();
-builder.Services.AddScoped<ServiceRequestService>();
-
-builder.Services.AddHostedService<ContractExpiryWorker>();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -100,37 +85,25 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedUICultures = new[] { culture }
 });
 
-//e migrate + seed
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<GlmsDbContext>();
-    if (!db.Database.GetMigrations().Any())
-    {
-        throw new InvalidOperationException(
-            "No EF Core migrations found. In Visual Studio open Tools > NuGet Package Manager > Package Manager Console, " +
-            "select GLMS.Web as the default project and run:  Add-Migration InitialCreate   (see README.md).");
-    }
-
-    await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(db,
-        scope.ServiceProvider.GetRequiredService<IFileStorageService>(),
-        scope.ServiceProvider.GetRequiredService<IClock>());
-}
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    if (app.Configuration.GetValue("Https:Redirect", false)) app.UseHsts();
 }
 
 // Friendly pages for 404 (unknown address or missing record) and other error status codes.
 app.UseStatusCodePagesWithReExecute("/status/{0}");
 
-app.UseHttpsRedirection();
+// In Docker the site is served on plain HTTP (port 8080); HTTPS redirection is only switched on outside containers.
+if (app.Configuration.GetValue("Https:Redirect", false))
+    app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

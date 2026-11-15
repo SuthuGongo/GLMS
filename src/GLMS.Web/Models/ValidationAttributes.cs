@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using GLMS.Core.Files;
+using GLMS.Shared;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace GLMS.Web.Models;
@@ -78,7 +78,7 @@ public sealed class PdfFileAttribute : ValidationAttribute, IClientModelValidato
     protected override ValidationResult? IsValid(object? value, ValidationContext context)
     {
         if (value is not IFormFile file) return ValidationResult.Success; // [Required] handles "missing"
-        return FileValidator.IsAllowed(file.FileName, file.Length)
+        return IsAllowed(file.FileName, file.Length)
             ? ValidationResult.Success
             : new ValidationResult(ErrorMessage, new[] { context.MemberName! });
     }
@@ -87,7 +87,21 @@ public sealed class PdfFileAttribute : ValidationAttribute, IClientModelValidato
     {
         ClientValidationHelper.Merge(context, "data-val", "true");
         ClientValidationHelper.Merge(context, "data-val-pdffile", ErrorMessage!);
-        ClientValidationHelper.Merge(context, "data-val-pdffile-maxbytes", FileValidator.MaxFileSizeBytes.ToString(CultureInfo.InvariantCulture));
+        ClientValidationHelper.Merge(context, "data-val-pdffile-maxbytes", ValidationLimits.AgreementMaxBytes.ToString(CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// Quick name/size check for the browser round-trip. The API repeats it and also checks the file's content
+    /// (the %PDF header and %%EOF trailer), so a renamed .exe is still rejected server-side.
+    /// </summary>
+    public static bool IsAllowed(string? fileName, long length)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)) return false;
+        var name = Path.GetFileName(fileName.Trim());
+        return name.Length <= ValidationLimits.AgreementMaxFileNameLength
+               && string.Equals(Path.GetExtension(name), ValidationLimits.AgreementExtension, StringComparison.OrdinalIgnoreCase)
+               && length > 0
+               && length <= ValidationLimits.AgreementMaxBytes;
     }
 }
 

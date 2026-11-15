@@ -4,8 +4,8 @@ using GLMS.Core.Services;
 namespace GLMS.Core.Validation;
 public static class ContractValidator
 {
-    public const int TitleMaxLength = 200;
-    public const int MaxTermYears = 10;
+    public const int TitleMaxLength = ValidationLimits.ContractTitleMaxLength;
+    public const int MaxTermYears = ValidationLimits.ContractMaxTermYears;
     public static IReadOnlyList<string> Validate(ContractInput? input)
     {
         if (input is null) return new[] { "Contract details are required." };
