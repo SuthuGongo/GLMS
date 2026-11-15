@@ -1,6 +1,11 @@
+using DotNet.Testcontainers.Builders;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using Testcontainers.MsSql;
 
 namespace GLMS.IntegrationTests.Infrastructure;
@@ -12,9 +17,12 @@ namespace GLMS.IntegrationTests.Infrastructure;
 /// </summary>
 public sealed class InMemoryApiHost : IApiHost
 {
-    // The module's default SQL Server 2022 image (its readiness check is written for that image).
+    // Same image as docker-compose.yml. Ready once SQL Server logs that it accepts connections;
+    // the API's start-up also retries until the database answers.
     private readonly MsSqlContainer _sql = new MsSqlBuilder()
+        .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword("Glms_Test_Passw0rd!")
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
         .Build();
 
     private WebApplicationFactory<Program>? _factory;
