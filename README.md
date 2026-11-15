@@ -1,7 +1,7 @@
-# Global Logistics Management System (GLMS) – Part 3
+﻿# Global Logistics Management System (GLMS) â€“ Part 3
 
-**TechMove Logistics · Modernisation, Docker & Automated Testing**
-Nobesuthu Gongo · ST10545758 · EAPD7111
+**TechMove Logistics Â· Modernisation, Docker & Automated Testing**
+Nobesuthu Gongo Â· ST10545758 Â· EAPD7111
 
 Part 3 turns the Part 2 prototype into a **service-oriented system**: a Web API that owns the
 database, an MVC front end that only talks to the API over HTTP, automated API integration tests,
@@ -9,14 +9,14 @@ and Docker containers for all three parts, orchestrated with Docker Compose.
 
 ```
             Browser
-               │  HTTP (cookie sign-in)
-               ▼
-  ┌───────────────────────────┐   HTTP + JWT (HttpClient)   ┌───────────────────────────┐   EF Core   ┌──────────────────┐
-  │ glms-frontend-web  :5000   │ ──────────────────────────▶ │ glms-backend-api  :5080   │ ──────────▶ │ sql-server-db    │
-  │ GLMS.Web (MVC)            │   http://glms-backend-api   │ GLMS.Api (Web API)        │  port 1433  │ SQL Server 2022  │
-  │ Presentation layer        │          :8080              │ Service layer + GLMS.Core │             │                  │
-  │ no DB, no GLMS.Core       │                             │ the ONLY DB client        │             │                  │
-  └───────────────────────────┘                             └───────────────────────────┘             └──────────────────┘
+               â”‚  HTTP (cookie sign-in)
+               â–¼
+  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   HTTP + JWT (HttpClient)   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”   EF Core   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+  â”‚ glms-frontend-web  :5000   â”‚ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¶ â”‚ glms-backend-api  :5080   â”‚ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¶ â”‚ sql-server-db    â”‚
+  â”‚ GLMS.Web (MVC)            â”‚   http://glms-backend-api   â”‚ GLMS.Api (Web API)        â”‚  port 1433  â”‚ SQL Server 2022  â”‚
+  â”‚ Presentation layer        â”‚          :8080              â”‚ Service layer + GLMS.Core â”‚             â”‚                  â”‚
+  â”‚ no DB, no GLMS.Core       â”‚                             â”‚ the ONLY DB client        â”‚             â”‚                  â”‚
+  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜             â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
                                  all three on the private Docker network "glms-net"
 ```
 
@@ -26,17 +26,17 @@ and Docker containers for all three parts, orchestrated with Docker Compose.
 
 ```
 GLMS.sln
-├── src/GLMS.Shared          API contract: DTOs, enums, validation limits, JSON settings (no dependencies)
-├── src/GLMS.Core            Domain, business rules, Strategy / Observer / Factory Method (unchanged logic from Part 2)
-├── src/GLMS.Api             NEW  ASP.NET Core Web API – controllers, EF Core DbContext, repositories, migrations, JWT, Swagger
-│   └── Dockerfile
-├── src/GLMS.Web             MVC front end – controllers call the API through typed HttpClients (ApiClients/)
-│   └── Dockerfile
-├── tests/GLMS.Tests         294 unit tests from Part 2 (still pass: GLMS.Core did not change behaviour)
-├── tests/GLMS.IntegrationTests  NEW  automated API integration tests (real HTTP, real SQL Server)
-├── docker-compose.yml       sql-server-db + glms-backend-api + glms-frontend-web
-├── .github/workflows/       CI: build → unit tests → integration tests → docker compose system test
-└── Database/                SQL scripts of the EF Core migrations
+â”œâ”€â”€ src/GLMS.Shared          API contract: DTOs, enums, validation limits, JSON settings (no dependencies)
+â”œâ”€â”€ src/GLMS.Core            Domain, business rules, Strategy / Observer / Factory Method (unchanged logic from Part 2)
+â”œâ”€â”€ src/GLMS.Api             NEW  ASP.NET Core Web API â€“ controllers, EF Core DbContext, repositories, migrations, JWT, Swagger
+â”‚   â””â”€â”€ Dockerfile
+â”œâ”€â”€ src/GLMS.Web             MVC front end â€“ controllers call the API through typed HttpClients (ApiClients/)
+â”‚   â””â”€â”€ Dockerfile
+â”œâ”€â”€ tests/GLMS.Tests         294 unit tests from Part 2 (still pass: GLMS.Core did not change behaviour)
+â”œâ”€â”€ tests/GLMS.IntegrationTests  NEW  automated API integration tests (real HTTP, real SQL Server)
+â”œâ”€â”€ docker-compose.yml       sql-server-db + glms-backend-api + glms-frontend-web
+â”œâ”€â”€ .github/workflows/       CI: build â†’ unit tests â†’ integration tests â†’ docker compose system test
+â””â”€â”€ Database/                SQL scripts of the EF Core migrations
 ```
 
 | Project | References | Talks to |
@@ -45,7 +45,7 @@ GLMS.sln
 | GLMS.Api | GLMS.Core, GLMS.Shared, EF Core | SQL Server |
 | GLMS.Core | GLMS.Shared | nothing (pure logic, injected repositories) |
 
-### What moved where (Part 2 → Part 3)
+### What moved where (Part 2 â†’ Part 3)
 
 | Part 2 (in GLMS.Web) | Part 3 |
 |---|---|
@@ -71,7 +71,7 @@ The first build takes a few minutes (it downloads the .NET SDK and SQL Server im
 | MVC site | http://localhost:5000 |
 | Swagger UI (API) | http://localhost:5080/swagger |
 | API health | http://localhost:5080/health |
-| SQL Server (SSMS / Azure Data Studio) | `localhost,14330` · user `sa` · password `Glms_Strong!Passw0rd` |
+| SQL Server (SSMS / Azure Data Studio) | `localhost,14330` Â· user `sa` Â· password `Glms_Strong!Passw0rd` |
 
 **Demo sign-ins:** `admin` / `Admin@12345` (can delete clients) and `manager` / `Manager@12345`.
 
@@ -79,7 +79,7 @@ Start-up order is enforced by health checks: the API waits until SQL Server acce
 the EF Core migrations, seeds the demo data, and only when `/health` is green does the web container start.
 
 ```bash
-docker compose ps            # all three "healthy"  ← screenshot this together with Docker Desktop
+docker compose ps            # all three "healthy"  â† screenshot this together with Docker Desktop
 docker compose logs -f glms-backend-api
 docker compose down          # stop (data kept in volumes)
 docker compose down -v       # stop and wipe the database
@@ -101,8 +101,8 @@ to demo without internet access.
 ## 3. Run it from Visual Studio (without Docker)
 
 1. Open `GLMS.sln`. LocalDB is used by default (`src/GLMS.Api/appsettings.json`).
-2. Pick the launch profile **"GLMS: API + Web"** in the toolbar (or right-click the solution →
-   *Configure Startup Projects* → *Multiple*: `GLMS.Api` and `GLMS.Web` both *Start*).
+2. Pick the launch profile **"GLMS: API + Web"** in the toolbar (or right-click the solution â†’
+   *Configure Startup Projects* â†’ *Multiple*: `GLMS.Api` and `GLMS.Web` both *Start*).
 3. Press **F5**. The API opens Swagger on http://localhost:5080/swagger and the site runs on http://localhost:5086.
 
 The API migrates and seeds the database itself on start-up. If you still have the Part 2 `GLMS_Db`
@@ -129,7 +129,7 @@ In Swagger: run `POST /api/auth/login`, copy `accessToken`, click **Authorize**,
 | GET | `/api/contracts/{id}/audit` | Compliance audit trail (Observer) | 200 | 404 |
 | GET/POST | `/api/clients` | List / create | 200 / 201 | 400 |
 | GET/PUT/DELETE | `/api/clients/{id}` | Read / update / delete (**Admin only**) | 200 / 200 / 204 | 400, 403, 404 |
-| GET/POST | `/api/service-requests?status=&contractId=` | List / raise (USD→ZAR in the API) | 200 / 201 | 400, 503 (no rate) |
+| GET/POST | `/api/service-requests?status=&contractId=` | List / raise (USDâ†’ZAR in the API) | 200 / 201 | 400, 503 (no rate) |
 | GET | `/api/service-requests/{id}` | Read | 200 | 404 |
 | PATCH | `/api/service-requests/{id}/status` | InProgress / Completed / Cancelled | 200 | 400, 404 |
 | GET | `/api/rates/usd-zar` | Live rate (Strategy) | 200 | 503 |
@@ -138,12 +138,12 @@ In Swagger: run `POST /api/auth/login`, copy `accessToken`, click **Authorize**,
 
 **How errors work.** Controllers contain no `try/catch` and no business logic. GLMS.Core throws its
 existing exceptions and `GlobalExceptionHandler` turns them into RFC 7807 problem details:
-`NotFoundException → 404`, `BusinessRuleException → 400`, `ConcurrencyException → 409`,
-`CurrencyConversionException → 503`. Malformed input is rejected with 400 by `[ApiController]` +
+`NotFoundException â†’ 404`, `BusinessRuleException â†’ 400`, `ConcurrencyException â†’ 409`,
+`CurrencyConversionException â†’ 503`. Malformed input is rejected with 400 by `[ApiController]` +
 DataAnnotations on the DTOs in GLMS.Shared before it reaches the services.
 
-**Layers inside the API:** Controller → GLMS.Core service (business rules, patterns) → repository
-interface → EF Core repository → SQL Server. Everything is wired with dependency injection in `Program.cs`.
+**Layers inside the API:** Controller â†’ GLMS.Core service (business rules, patterns) â†’ repository
+interface â†’ EF Core repository â†’ SQL Server. Everything is wired with dependency injection in `Program.cs`.
 
 ## 5. The MVC front end (decoupled)
 
@@ -153,8 +153,8 @@ interface → EF Core repository → SQL Server. Everything is wired with depend
 * `ApiClientBase` turns HTTP results into exceptions controllers can act on (`ApiValidationException`,
   `ApiConflictException`, `ApiNotFoundException`, `ApiUnauthorizedException`, `ApiForbiddenException`,
   `ApiUnavailableException`).
-* **Failed API calls** are handled in one place, `Filters/ApiExceptionFilter`: API down or timed out → a
-  friendly *service unavailable* page (503); token expired → back to the login page; 403 → message; 404 → not-found page.
+* **Failed API calls** are handled in one place, `Filters/ApiExceptionFilter`: API down or timed out â†’ a
+  friendly *service unavailable* page (503); token expired â†’ back to the login page; 403 â†’ message; 404 â†’ not-found page.
   Validation messages from the API appear on the form, under the right field.
 * **Authentication:** the login page posts to `POST /api/auth/login`. The returned JWT is stored inside the
   encrypted, HttpOnly sign-in cookie, and `BearerTokenHandler` adds it to every API call. The browser
@@ -184,16 +184,16 @@ What they cover:
 
 | Area | Examples |
 |---|---|
-| The brief's example | `GET /api/contracts` → **200 OK** and the JSON is **not null** |
-| Data integrity (create then read) | POST a contract → **201** + Location → GET it → every field matches; same for clients and service requests |
-| Filtering | by status, client + keyword, date-range overlap; From after To → 400 |
+| The brief's example | `GET /api/contracts` â†’ **200 OK** and the JSON is **not null** |
+| Data integrity (create then read) | POST a contract â†’ **201** + Location â†’ GET it â†’ every field matches; same for clients and service requests |
+| Filtering | by status, client + keyword, date-range overlap; From after To â†’ 400 |
 | Status codes | 400 (validation and business rules), 401 (no token or tampered token), 403 (manager deletes a client), 404, **409** (stale rowVersion) |
-| Workflow | activate without PDF → 400; upload PDF → activate → audit entry written; Expired → Active → 400; on hold pauses open requests (Observer) |
-| Files | `.exe` renamed to `.pdf` → 400 and nothing stored; download returns the exact bytes uploaded |
-| Currency + SLA | ZAR = USD × rate rounded to cents; Priority Logistics + urgent → Critical, 2-hour response (Factory Method) |
+| Workflow | activate without PDF â†’ 400; upload PDF â†’ activate â†’ audit entry written; Expired â†’ Active â†’ 400; on hold pauses open requests (Observer) |
+| Files | `.exe` renamed to `.pdf` â†’ 400 and nothing stored; download returns the exact bytes uploaded |
+| Currency + SLA | ZAR = USD Ã— rate rounded to cents; Priority Logistics + urgent â†’ Critical, 2-hour response (Factory Method) |
 | Platform | login, `/health`, Swagger document lists the endpoints, dashboard |
 
-**Evidence for the submission:** *Test → Test Explorer → Run All* (both projects green), and the
+**Evidence for the submission:** *Test â†’ Test Explorer â†’ Run All* (both projects green), and the
 GitHub **Actions** tab showing the pipeline below.
 
 ### CI/CD pipeline (`.github/workflows/dotnet-tests.yml`)
@@ -213,11 +213,3 @@ A push that breaks any of these turns the pipeline red, so the change is never d
 | `src/GLMS.Web/Dockerfile` | Same pattern; does not even copy GLMS.Core into the build. |
 | `.dockerignore` | Keeps `bin/`, `obj/`, `.git`, tests and runtime data out of the build context. |
 | `docker-compose.yml` | The three containers, the `glms-net` network, health-check-based start order, environment variables, and volumes for the database, the uploaded PDFs and the cookie keys. |
-
-## 8. Submission checklist (Part 3)
-
-- [ ] Push everything to GitHub (`git add -A`, `git commit`, `git push`); check the Actions tab is green.
-- [ ] Screenshots: Docker Desktop *Containers* view with the `glms` stack (3 containers, healthy), the
-      *Images* view, Swagger UI, the site running on localhost:5000, Test Explorer with all tests passing.
-- [ ] Technical reflection report → export `docs/Part3_Technical_Reflection.md` to PDF (edit it into your own words first).
-- [ ] Video: see `docs/Part3_Video_Script.md` for the order to show the flow.
