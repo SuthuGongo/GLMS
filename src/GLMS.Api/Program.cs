@@ -40,22 +40,22 @@ builder.Services.AddGlmsSwagger();
 // ---------------------------------------------------------------- Database (repositories, health check)
 builder.Services.AddGlmsData(builder.Configuration);
 
-// ---------------------------------------------------------------- Authentication (JWT)
+//  Authentication (JWT)
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<SeedUserOptions>(builder.Configuration.GetSection("SeedUsers"));
 builder.Services.AddGlmsJwtAuthentication(builder.Configuration);
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<AuthService>();
 
-// ---------------------------------------------------------------- Cross-cutting
+// Cross-cutting
 builder.Services.AddSingleton<IClock, SystemClock>();
 
-// Signed agreements live on a Docker volume in containers (see docker-compose.yml).
+// Signed agreements live on a Docker volume in containers
 var storageRoot = Path.Combine(builder.Environment.ContentRootPath,
     builder.Configuration.GetValue<string>("FileStorage:RootPath") ?? "App_Data/agreements");
 builder.Services.AddSingleton<IFileStorageService>(new LocalFileStorageService(storageRoot));
 
-// ---------------------------------------------------------------- STRATEGY pattern wiring (moved unchanged from Part 2)
+// STRATEGY pattern wiring 
 builder.Services.AddHttpClient<LiveRateApiStrategy>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("CurrencyApi:BaseUrl") ?? LiveRateApiStrategy.DefaultBaseUrl);
@@ -83,17 +83,17 @@ else
 }
 builder.Services.AddScoped<FinancialService>();
 
-// ---------------------------------------------------------------- OBSERVER pattern wiring
+// OBSERVER pattern wiring
 builder.Services.AddScoped<ServiceRequestValidator>();
 builder.Services.AddScoped<IContractObserver>(sp => sp.GetRequiredService<ServiceRequestValidator>());
 builder.Services.AddScoped<IContractObserver, ComplianceLogger>();
 
-// ---------------------------------------------------------------- FACTORY METHOD pattern wiring
+// FACTORY METHOD pattern wiring
 builder.Services.AddScoped<ServiceRequestFactory, StandardSLAFactory>();
 builder.Services.AddScoped<ServiceRequestFactory, PriorityLogisticsFactory>();
 builder.Services.AddScoped<ServiceRequestFactoryResolver>();
 
-// ---------------------------------------------------------------- Application services (GLMS.Core) + API read models
+// Application services (GLMS.Core) + API read models
 builder.Services.AddScoped<ClientService>();
 builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<ServiceRequestService>();
