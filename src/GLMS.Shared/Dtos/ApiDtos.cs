@@ -127,8 +127,8 @@ public sealed class ContractSearchQuery
     [StringLength(100)]
     public string? Keyword { get; set; }
 
-    public bool IsEmpty =>
-        FromDate is null && ToDate is null && Status is null && ServiceLevel is null && ClientId is null &&
+    public bool IsEmpty() =>
+    FromDate is null && ToDate is null && Status is null && ServiceLevel is null && ClientId is null &&
         string.IsNullOrWhiteSpace(Keyword);
 }
 

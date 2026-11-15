@@ -168,7 +168,7 @@ public class ContractSearchViewModel
         Keyword = Keyword
     };
 
-    public bool HasFilters => !ToQuery().IsEmpty;
+    public bool HasFilters => !ToQuery().IsEmpty();
 }
 
 public class ContractDetailsViewModel
