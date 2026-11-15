@@ -18,6 +18,7 @@ public sealed class AuthController : ControllerBase
     private readonly AuthService _auth;
     public AuthController(AuthService auth) => _auth = auth;
 
+    /// <summary>Signs in with a username and password. Returns a JWT to send as "Authorization: Bearer {token}", or 401 if the details are wrong.</summary>
     [HttpPost("login")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]

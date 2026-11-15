@@ -14,11 +14,13 @@ namespace GLMS.Api.Controllers;
 [ApiController]
 [Route("api/rates")]
 [Authorize]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public sealed class RatesController : ControllerBase
 {
     private readonly ServiceRequestService _requests;
     public RatesController(ServiceRequestService requests) => _requests = requests;
 
+    /// <summary>The current USD to ZAR exchange rate. Returns 503 if no live or cached rate is available.</summary>
     [HttpGet("usd-zar")]
     [ProducesResponseType(typeof(RateQuoteDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]

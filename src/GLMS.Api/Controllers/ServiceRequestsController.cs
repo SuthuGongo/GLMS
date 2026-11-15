@@ -14,16 +14,21 @@ namespace GLMS.Api.Controllers;
 [ApiController]
 [Route("api/service-requests")]
 [Authorize]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public sealed class ServiceRequestsController : ControllerBase
 {
     private readonly ServiceRequestService _requests;
     public ServiceRequestsController(ServiceRequestService requests) => _requests = requests;
 
+    /// <summary>Lists service requests, optionally filtered by status and contract.</summary>
+    /// <remarks>Example: GET /api/service-requests?status=Pending&amp;contractId=1</remarks>
     [HttpGet]
     [ProducesResponseType(typeof(List<ServiceRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<List<ServiceRequestDto>>> GetAll([FromQuery] ServiceRequestStatus? status, [FromQuery] int? contractId, CancellationToken ct) =>
         (await _requests.GetAllAsync(status, contractId, ct)).Select(r => r.ToDto()).ToList();
 
+    /// <summary>One service request with its USD and ZAR cost, the rate used and its SLA due time.</summary>
     [HttpGet("{id:int}", Name = RouteNames.GetServiceRequest)]
     [ProducesResponseType(typeof(ServiceRequestDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]

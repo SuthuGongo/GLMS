@@ -14,11 +14,13 @@ namespace GLMS.Api.Controllers;
 [ApiController]
 [Route("api/dashboard")]
 [Authorize]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public sealed class DashboardController : ControllerBase
 {
     private readonly DashboardService _dashboard;
     public DashboardController(DashboardService dashboard) => _dashboard = dashboard;
 
+    /// <summary>Everything the home page shows: the to-do list, contract term lines, open request counts and the USD to ZAR rate.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(DashboardDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<DashboardDto>> Get(CancellationToken ct) => await _dashboard.BuildAsync(ct);

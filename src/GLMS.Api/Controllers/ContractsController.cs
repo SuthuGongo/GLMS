@@ -17,6 +17,7 @@ namespace GLMS.Api.Controllers;
 [ApiController]
 [Route("api/contracts")]
 [Authorize]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public sealed class ContractsController : ControllerBase
 {
     private readonly ContractService _contracts;
