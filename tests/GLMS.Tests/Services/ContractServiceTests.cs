@@ -219,4 +219,46 @@ public class ContractServiceTests
         Assert.Equal(90m, second.CostZar);
         Assert.Equal(3, _audit.Entries.Count); // activate, hold, re-activate
     }
+
+    private ServiceRequestService RequestService(FakeServiceRequestRepository requests)
+    {
+        var validator = new ServiceRequestValidator(_clock);
+        return new ServiceRequestService(requests, _contracts, validator,
+            new FinancialService(new StubRateStrategy(18m)),
+            new ServiceRequestFactoryResolver(new ServiceRequestFactory[] { new StandardSLAFactory(validator, _clock) }),
+            _clock);
+    }
+
+    /// <summary>Part 3: the status rule lives in the service layer, so the API controller only passes the request on.</summary>
+    [Fact]
+    public async Task ChangeStatus_StartThenComplete_FollowsTheWorkflow()
+    {
+        var requests = new FakeServiceRequestRepository();
+        var requestService = RequestService(requests);
+        var contract = await _service.CreateAsync(ValidInput(), Pdf(), activate: true);
+        var request = await requestService.CreateAsync(new NewServiceRequest(contract.Id, "Pallet storage", 10m));
+
+        await requestService.ChangeStatusAsync(request.Id, ServiceRequestStatus.InProgress);
+        Assert.Equal(ServiceRequestStatus.InProgress, request.Status);
+
+        await requestService.ChangeStatusAsync(request.Id, ServiceRequestStatus.Completed);
+        Assert.Equal(ServiceRequestStatus.Completed, request.Status);
+        Assert.NotNull(request.ClosedUtc);
+    }
+
+    [Theory]
+    [InlineData(ServiceRequestStatus.OnHold)]
+    [InlineData(ServiceRequestStatus.Pending)]
+    public async Task ChangeStatus_ToAStatusSetOnlyByTheSystem_IsRejected(ServiceRequestStatus status)
+    {
+        var requests = new FakeServiceRequestRepository();
+        var requestService = RequestService(requests);
+        var contract = await _service.CreateAsync(ValidInput(), Pdf(), activate: true);
+        var request = await requestService.CreateAsync(new NewServiceRequest(contract.Id, "Pallet storage", 10m));
+
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() => requestService.ChangeStatusAsync(request.Id, status));
+
+        Assert.Contains("InProgress, Completed or Cancelled", ex.Message);
+        Assert.Equal(ServiceRequestStatus.Pending, request.Status);
+    }
 }

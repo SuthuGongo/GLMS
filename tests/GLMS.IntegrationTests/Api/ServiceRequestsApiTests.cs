@@ -135,6 +135,24 @@ public sealed class ServiceRequestsApiTests : ApiTestBase
     }
 
     [Fact]
+    public async Task ChangeStatus_ToOnHold_IsRejectedWith400()
+    {
+        var contract = await CreateActiveContractAsync();
+        var created = await ReadAsync<ServiceRequestDto>(await Client.PostAsync("api/service-requests", Json(new CreateServiceRequestRequest
+        {
+            ContractId = contract.Id,
+            Description = "Request a user tries to put on hold",
+            CostUsd = 40m
+        })));
+
+        var response = await PatchAsync(Client, $"api/service-requests/{created.Id}/status", new ChangeRequestStatusRequest { Status = ServiceRequestStatus.OnHold });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains((await ReadProblemAsync(response)).AllErrors, e => e.Contains("InProgress, Completed or Cancelled", StringComparison.Ordinal));
+        Assert.Equal(ServiceRequestStatus.Pending, (await GetJsonAsync<ServiceRequestDto>($"api/service-requests/{created.Id}")).Status);
+    }
+
+    [Fact]
     public async Task PuttingTheContractOnHold_PausesItsOpenRequests()
     {
         var contract = await CreateActiveContractAsync();

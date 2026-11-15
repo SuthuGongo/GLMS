@@ -1,9 +1,6 @@
-using GLMS.Api.Auth;
 using GLMS.Api.Mapping;
 using GLMS.Api.Services;
-using GLMS.Core.Patterns.Observer;
 using GLMS.Core.Services;
-using GLMS.Shared;
 using GLMS.Shared.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -45,8 +42,7 @@ public sealed class ServiceRequestsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<ServiceRequestDto>> Create([FromBody] CreateServiceRequestRequest request, CancellationToken ct)
     {
-        var created = await _requests.CreateAsync(
-            new NewServiceRequest(request.ContractId, request.Description, request.CostUsd, request.IsUrgent), ct);
+        var created = await _requests.CreateAsync(request.ToInput(), ct);
         var dto = (await _requests.GetAsync(created.Id, ct)).ToDto();
         return CreatedAtRoute(RouteNames.GetServiceRequest, new { id = created.Id }, dto);
     }
@@ -58,14 +54,7 @@ public sealed class ServiceRequestsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ServiceRequestDto>> ChangeStatus(int id, [FromBody] ChangeRequestStatusRequest request, CancellationToken ct)
     {
-        var updated = request.Status switch
-        {
-            ServiceRequestStatus.InProgress => await _requests.StartAsync(id, ct),
-            ServiceRequestStatus.Completed => await _requests.CompleteAsync(id, ct),
-            ServiceRequestStatus.Cancelled => await _requests.CancelAsync(id, request.Reason, ct),
-            _ => throw new GLMS.Core.Exceptions.BusinessRuleException(
-                "A service request can only be moved to InProgress, Completed or Cancelled. On hold is set automatically by its contract.")
-        };
+        var updated = await _requests.ChangeStatusAsync(id, request.Status!.Value, request.Reason, ct);
         return (await _requests.GetAsync(updated.Id, ct)).ToDto();
     }
 }

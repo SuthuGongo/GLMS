@@ -95,4 +95,18 @@ public sealed class ServiceRequestService
         await _requests.SaveChangesAsync(ct);
         return request;
     }
+
+    /// <summary>
+    /// Moves a request to the status a user asked for. Only InProgress (start work), Completed and Cancelled can be
+    /// requested; OnHold and Pending are set automatically when the parent contract changes (Observer pattern).
+    /// </summary>
+    public Task<ServiceRequest> ChangeStatusAsync(int id, ServiceRequestStatus newStatus, string? reason = null, CancellationToken ct = default) =>
+        newStatus switch
+        {
+            ServiceRequestStatus.InProgress => StartAsync(id, ct),
+            ServiceRequestStatus.Completed => CompleteAsync(id, ct),
+            ServiceRequestStatus.Cancelled => CancelAsync(id, reason, ct),
+            _ => throw new BusinessRuleException(
+                "A service request can only be moved to InProgress, Completed or Cancelled. On hold is set automatically by its contract.")
+        };
 }

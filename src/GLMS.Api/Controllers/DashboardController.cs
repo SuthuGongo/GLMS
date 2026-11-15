@@ -1,9 +1,4 @@
-using GLMS.Api.Auth;
-using GLMS.Api.Mapping;
 using GLMS.Api.Services;
-using GLMS.Core.Patterns.Observer;
-using GLMS.Core.Services;
-using GLMS.Shared;
 using GLMS.Shared.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

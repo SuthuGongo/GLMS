@@ -1,8 +1,6 @@
 using GLMS.Api.Mapping;
 using GLMS.Api.Services;
-using GLMS.Core.Files;
 using GLMS.Core.Services;
-using GLMS.Shared;
 using GLMS.Shared.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

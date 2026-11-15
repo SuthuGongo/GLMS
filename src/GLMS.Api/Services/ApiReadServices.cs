@@ -124,6 +124,9 @@ public static class QueryMapping
     public static ContractInput ToInput(this SaveContractRequest r) =>
         new(r.ClientId, r.Title, r.StartDate, r.EndDate, r.ServiceLevel);
 
+    public static NewServiceRequest ToInput(this CreateServiceRequestRequest r) =>
+        new(r.ContractId, r.Description, r.CostUsd, r.IsUrgent);
+
     public static ClientInput ToInput(this SaveClientRequest r) =>
         new(r.Name, r.ContactPerson ?? string.Empty, r.Email, r.PhoneNumber ?? string.Empty, r.Region);
 }
